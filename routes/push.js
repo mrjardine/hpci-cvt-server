@@ -1,6 +1,7 @@
 const { apiPathPrefix } = require('../config');
 const { prepareMessages } = require('../notifications/message');
 const { sendMessages, readReceipts } = require('../notifications/expo');
+const { addNotifications } = require('../data/notification');
 const { addTickets, getTickets, removeTickets } = require('../data/ticket');
 
 const pushRoutes = (app) => {
@@ -9,7 +10,7 @@ const pushRoutes = (app) => {
   // /push/send
   app
     .route(pushPathPrefix.concat('/send'))
-    .post([prepareMessages, sendMessages, addTickets], (req, res) => {
+    .post([prepareMessages, sendMessages, addTickets, addNotifications], (req, res) => {
       // console.log("send push notification... ", req.route.path);
       res.send();
     });

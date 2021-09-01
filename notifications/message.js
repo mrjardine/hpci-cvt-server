@@ -2,14 +2,15 @@ const { checkTokenExists, checkTokensExist } = require('../data/device');
 const { isNil } = require('../utils/util');
 
 const isInvalid = (message) => {
-  const { to, title, body } = message;
+  const { to, title, body, data } = message;
   try {
     if (
       !isNil(to) &&
       !isNil(title) &&
       !isNil(body) &&
       title.trim() !== '' &&
-      body.trim() !== ''
+      body.trim() !== '' &&
+      (isNil(data) || (!isNil(data) && (!isNil(data.nid) || !isNil(data.link))))
     ) {
       if (to === 'all' || to === 'en' || to === 'fr') {
         return false;
@@ -23,7 +24,7 @@ const isInvalid = (message) => {
         }
       }
     }
-    throw 'Invalid message (to, title, and body are required, and token(s) must be registered and stored).';
+    throw 'Invalid message (to, title, and body are required, token(s) must be registered and stored, and data must include nid and/or link if provided).';
   } catch (error) {
     console.log(error, message);
     return true;

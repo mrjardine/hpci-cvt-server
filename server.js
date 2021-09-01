@@ -20,7 +20,7 @@ if (env === 'DEV') {
     }
   });
 }
-// TODO: else use postgres or mongo for PROD?  e.g. if DEV use node-json-db, else use PostgreSQL, extra security, etc.
+// TODO: else use postgres for PROD?  e.g. if DEV use node-json-db, else use PostgreSQL, extra security, etc.
 
 // configure express instance, including handling JSON data
 app.disable('x-powered-by');
