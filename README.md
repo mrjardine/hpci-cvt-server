@@ -185,7 +185,7 @@ $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1
 - /api/vi/push/read/receipts
 
 Gets receipts from Expo, processes and removes stored tickets. See ./notifications/expo.
-E.g. schedule a cron task to run this endpoint daily, or twice a day...
+Note: can schedule a cron task to run this endpoint daily.
 
 
 ## data
@@ -202,6 +202,7 @@ E.g. schedule a cron task to run this endpoint daily, or twice a day...
             "updated": "2021-08-11T15:01:27Z"
         }
     },
+    "notifications": {},
     "tickets": {}
 }
 ````
@@ -219,8 +220,5 @@ HPCI CVT API Server
 
 - set up and send Expo 'security token'
 - complete handling of errors from Expo
-- https, authentication, cors for this server
 - bookmarks
-- if device/token has bookmarks (opt in restriction), ensure non-related product messages are not sent
 - db implementation for prod
-- server logging
