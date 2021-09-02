@@ -32,17 +32,18 @@ const sendNotifications = async (expo, messages) => {
 };
 
 const sendMessages = async (req, res, next) => {
-  if (req.validMessages) {
+  const { validMessages, messagesToSend } = req;
+  if (validMessages) {
     // create a new Expo SDK client
     let expo = new Expo();
     // TODO:
     // enable expo push security and provide the access token
     // let expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
 
-    // console.log('messages - prepared: ', req.messagesToSend);
+    // console.log('messages - prepared: ', messagesToSend);
     const expoTokens = [];
     const messages = [];
-    req.messagesToSend.forEach((message) => {
+    messagesToSend.forEach((message) => {
       const { to, title, body, data, sound, badge } = message;
       let tokens = [];
       if (Array.isArray(to)) {
@@ -71,11 +72,11 @@ const sendMessages = async (req, res, next) => {
       }
     });
     if (messages.length > 0) {
-      console.log('sendMessages: Messages to send:', JSON.stringify(messages));
+      console.log('sendMessages: Messages to send to Expo:', JSON.stringify(messages));
       try {
         req.expoTickets = await sendNotifications(expo, messages);
         req.expoTokens = expoTokens;
-        req.sentNotifications = messages;
+        req.sentNotifications = messagesToSend;
       } catch (error) {
         console.log('Error sending notifications: ', error);
       }

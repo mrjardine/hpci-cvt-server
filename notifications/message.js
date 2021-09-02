@@ -1,8 +1,10 @@
+
+const { lang } = require('../constants/constants');
 const { checkTokenExists, checkTokensExist } = require('../data/device');
 const { isNil } = require('../utils/util');
 
 const isInvalid = (message) => {
-  const { to, title, body, data } = message;
+  const { to, title, body, data, language } = message;
   try {
     if (
       !isNil(to) &&
@@ -10,7 +12,8 @@ const isInvalid = (message) => {
       !isNil(body) &&
       title.trim() !== '' &&
       body.trim() !== '' &&
-      (isNil(data) || (!isNil(data) && (!isNil(data.nid) || !isNil(data.link))))
+      (isNil(data) || (!isNil(data) && (!isNil(data.nid) || !isNil(data.link)))) &&
+      (isNil(language) || (!isNil(language) && [lang.english, lang.french, lang.all].indexOf(language) >= 0))
     ) {
       if (to === 'all' || to === 'en' || to === 'fr') {
         return false;
@@ -61,14 +64,20 @@ const prepareMessages = (req, res, next) => {
       switch (to) {
         case 'all':
           message.to = req.deviceTokens;
+          message.language = lang.all;
           break;
         case 'en':
           message.to = req.deviceTokensForEn;
+          message.language = lang.english;
           break;
         case 'fr':
           message.to = req.deviceTokensForFr;
+          message.language = lang.french;
           break;
         default:
+          message.language = isNil(message.language) 
+            ? lang.english
+            : message.language;
           break;
       }
     });
