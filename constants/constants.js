@@ -1,6 +1,7 @@
 const lang = {
   english: 'en',
   french: 'fr',
+  all: 'all',
   default: 'en'
 };
 
