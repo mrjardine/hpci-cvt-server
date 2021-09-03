@@ -51,6 +51,15 @@ const addNotifications = (req, res, next) => {
   next();
 };
 
+const retrieveNotifications = (req, res, next) => {
+  // get most recent notifications within last x days on or after :date
+  // note: if :token has stored bookmarks, non-related product notifications will be filtered out
+  // TODO: implement
+  res.status(501);
+  next();
+};
+
 module.exports = {
-  addNotifications
+  addNotifications,
+  retrieveNotifications
 };

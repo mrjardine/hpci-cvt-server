@@ -1,5 +1,6 @@
 const { apiPathPrefix } = require('../config');
 const deviceRoutes = require('./devices');
+const notificationRoutes = require('./notifications');
 const pushRoutes = require('./push');
 
 const appRouter = (app) => {
@@ -16,6 +17,7 @@ const appRouter = (app) => {
 
   // run route modules here to complete the wire up
   deviceRoutes(app);
+  notificationRoutes(app);
   pushRoutes(app);
 };
 

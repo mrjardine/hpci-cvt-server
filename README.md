@@ -187,9 +187,9 @@ $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1
 Gets receipts from Expo, processes and removes stored tickets. See ./notifications/expo.
 Note: can schedule a cron task to run this endpoint daily.
 
-- /api/v1/notifications/:token/:language/:date
+- /api/v1/notifications/:token/:language/:date?
 
-Gets most recent notifications within last x days on or after :date.
+Gets most recent notifications within last x days on or after :date, if provided.
 Note: if :token has stored bookmarks, non-related product notifications will be filtered out.
 
 
