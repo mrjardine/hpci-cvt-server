@@ -8,6 +8,7 @@ class JsonDB {
   constructor() {
     if (!this.instance) {
       this.instance = this;
+      // console.log('starting JsonDB...'); // single instance
       // https://github.com/Belphemur/node-json-db
       this.db = new NodeJsonDB(
         new Config(devDbPath.concat(devDbFile), true, true, '/')

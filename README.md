@@ -1,8 +1,8 @@
 # HPCI CVT API Server
 
 - API server for HPCI CVT
-- Stores Expo Push Notification tokens along with language preference
-- Sends push notifications via Expo
+- Stores Expo Push Notification tokens along with language and bookmark preferences
+- Sends push notifications via Expo provider
 - Work in progress
 
 
@@ -182,10 +182,15 @@ $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1
 ]'
 ````
 
-- /api/vi/push/read/receipts
+- /api/v1/push/read/receipts
 
 Gets receipts from Expo, processes and removes stored tickets. See ./notifications/expo.
 Note: can schedule a cron task to run this endpoint daily.
+
+- /api/v1/notifications/:token/:language/:date
+
+Gets most recent notifications within last x days on or after :date.
+Note: if :token has stored bookmarks, non-related product notifications will be filtered out.
 
 
 ## data
@@ -221,4 +226,5 @@ HPCI CVT API Server
 - set up and send Expo 'security token'
 - complete handling of errors from Expo
 - bookmarks
+- get/pull notifications
 - db implementation for prod
