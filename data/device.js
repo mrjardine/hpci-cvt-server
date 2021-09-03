@@ -97,8 +97,10 @@ const countDevices = (req, res, next) => {
 const reloadDevices = (req, res, next) => {
   if (env === 'DEV') {
     JsonDB.reload();
+    res.status(200);
+  } else {
+    res.status(404); // restart server
   }
-  res.status(200);
   next();
 };
 
