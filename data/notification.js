@@ -1,6 +1,5 @@
 const JsonDB = require('./JsonDB');
 const { v4: uuidv4 } = require('uuid');
-const { lang } = require('../constants/constants');
 const { isNil } = require('../utils/util');
 const { now } = require('../utils/day');
 
@@ -31,8 +30,8 @@ const addNotifications = (req, res, next) => {
   if (!isNil(sentNotifications)) {
     const notifications = sentNotifications.map((sentNotification) => {
       return notification(
-        Array.isArray(sentNotification.to) && sentNotification.to.length
-          > maxTokensToStore
+        Array.isArray(sentNotification.to) &&
+          sentNotification.to.length > maxTokensToStore
           ? sentNotification.language
           : sentNotification.to.toString(),
         sentNotification.language,

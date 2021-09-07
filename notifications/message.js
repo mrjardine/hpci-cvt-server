@@ -1,4 +1,3 @@
-
 const { lang } = require('../constants/constants');
 const { checkTokenExists, checkTokensExist } = require('../data/device');
 const { isNil } = require('../utils/util');
@@ -12,8 +11,11 @@ const isInvalid = (message) => {
       !isNil(body) &&
       title.trim() !== '' &&
       body.trim() !== '' &&
-      (isNil(data) || (!isNil(data) && (!isNil(data.nid) || !isNil(data.link)))) &&
-      (isNil(language) || (!isNil(language) && [lang.english, lang.french, lang.all].indexOf(language) >= 0))
+      (isNil(data) ||
+        (!isNil(data) && (!isNil(data.nid) || !isNil(data.link)))) &&
+      (isNil(language) ||
+        (!isNil(language) &&
+          [lang.english, lang.french, lang.all].indexOf(language) >= 0))
     ) {
       if (to === 'all' || to === 'en' || to === 'fr') {
         return false;
@@ -75,7 +77,7 @@ const prepareMessages = (req, res, next) => {
           message.language = lang.french;
           break;
         default:
-          message.language = isNil(message.language) 
+          message.language = isNil(message.language)
             ? lang.english
             : message.language;
           break;
