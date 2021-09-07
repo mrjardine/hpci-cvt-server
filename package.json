@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "nodemon -r dotenv/config server.js --ignore data/db/*",
-    "test": "echo \\\"Error: no test specified\\\" && exit 1"
+    "test": "echo \\\"Error: no test specified\\\" && exit 1",
+    "lint": "eslint . --ext .js"
   },
   "keywords": [
     "node",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.15.0",
+    "babel-eslint": "^10.1.0",
     "dotenv": "^10.0.0",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",

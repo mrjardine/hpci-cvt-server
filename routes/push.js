@@ -10,10 +10,13 @@ const pushRoutes = (app) => {
   // /push/send
   app
     .route(pushPathPrefix.concat('/send'))
-    .post([prepareMessages, sendMessages, addTickets, addNotifications], (req, res) => {
-      // console.log("send push notification... ", req.route.path);
-      res.send();
-    });
+    .post(
+      [prepareMessages, sendMessages, addTickets, addNotifications],
+      (req, res) => {
+        // console.log("send push notification... ", req.route.path);
+        res.send();
+      }
+    );
 
   // /push/read/receipts
   app

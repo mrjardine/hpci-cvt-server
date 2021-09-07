@@ -1,7 +1,5 @@
 const { apiPathPrefix } = require('../config');
-const {
-  retrieveNotifications
-} = require('../data/notification');
+const { retrieveNotifications } = require('../data/notification');
 
 const notificationRoutes = (app) => {
   const notificationsPathPrefix = apiPathPrefix.concat('notifications');
@@ -23,7 +21,6 @@ const notificationRoutes = (app) => {
     .get([retrieveNotifications], (req, res) => {
       res.send();
     });
-
 };
 
 module.exports = notificationRoutes;

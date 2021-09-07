@@ -72,7 +72,10 @@ const sendMessages = async (req, res, next) => {
       }
     });
     if (messages.length > 0) {
-      console.log('sendMessages: Messages to send to Expo:', JSON.stringify(messages));
+      console.log(
+        'sendMessages: Messages to send to Expo:',
+        JSON.stringify(messages)
+      );
       try {
         req.expoTickets = await sendNotifications(expo, messages);
         req.expoTokens = expoTokens;
@@ -127,7 +130,10 @@ const readReceipts = async (req, res, next) => {
         // notification and information about an error, if one occurred.
         for (let receiptId in receipts) {
           let { status, message, details } = receipts[receiptId];
-          console.log(`readReceipts: Expo push notification receipt ${receiptId}: `, receipts[receiptId]);
+          console.log(
+            `readReceipts: Expo push notification receipt ${receiptId}: `,
+            receipts[receiptId]
+          );
           if (status === 'ok') {
             continue;
           } else if (status === 'error') {
