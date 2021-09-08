@@ -12,7 +12,7 @@ const isInvalid = (message) => {
       title.trim() !== '' &&
       body.trim() !== '' &&
       (isNil(data) ||
-        (!isNil(data) && (!isNil(data.nid) || !isNil(data.link)))) &&
+        (!isNil(data) && (!isNil(data.products) || !isNil(data.link)))) &&
       (isNil(language) ||
         (!isNil(language) &&
           [lang.english, lang.french, lang.all].indexOf(language) >= 0))
@@ -29,7 +29,7 @@ const isInvalid = (message) => {
         }
       }
     }
-    throw 'Invalid message (to, title, and body are required, token(s) must be registered and stored, and data must include nid and/or link if provided).';
+    throw 'Invalid message (to, title, and body are required, token(s) must be registered and stored, and data must include products and/or link if provided).';
   } catch (error) {
     console.log(error, message);
     return true;

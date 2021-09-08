@@ -17,8 +17,8 @@ class JsonDB {
     return this.instance;
   }
 
-  add(datapath, data) {
-    this.db.push(datapath, data, false);
+  add(datapath, data, override = false) {
+    this.db.push(datapath, data, override);
   }
 
   retrieve(dataPath) {

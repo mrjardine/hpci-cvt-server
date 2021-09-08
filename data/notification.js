@@ -18,7 +18,7 @@ const notification = (
     language: language, // text: en, fr or all
     title: title, // text
     body: body, // text
-    data: data, // {} with nid and/or link, null
+    data: data, // {} with products and/or link, null
     created: created
   };
 };

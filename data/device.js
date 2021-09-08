@@ -19,18 +19,44 @@ const device = (token, language = lang.english, bookmarks = []) => {
   };
 };
 
+const isValid = (token, language, bookmarks) => {
+  return (
+    !isNil(token) &&
+    token.length === 22 &&
+    (language === lang.english || language === lang.french) &&
+    (isNil(bookmarks) || Array.isArray(bookmarks))
+  );
+};
+
+const prepareDevice = (req, res, next) => {
+  const { token, language } = req.params;
+  const { data } = req.body;
+  let languagePref = language;
+  if (isNil(languagePref) && !isNil(data) && !isNil(data.language)) {
+    languagePref = data.language;
+  } else {
+    languagePref = !isNil(languagePref) ? languagePref : lang.english; // reset to en if language is not provided
+  }
+  let bookmarks = !isNil(data) && !isNil(data.bookmarks) ? data.bookmarks : [];
+  req.validDevice = isValid(token, languagePref, bookmarks);
+  if (req.validDevice) {
+    req.userDevice = device(token, languagePref, bookmarks);
+  }
+  next();
+};
+
 const addDevice = (req, res, next) => {
-  const token = req.params.token;
-  const language = !isNil(req.params.language)
-    ? req.params.language
-    : lang.english;
-  // TODO: bookmarks
-  if (token.length === 22) {
-    const userDevice = device(token, language);
-    JsonDB.add(dataPathRoot.concat(token), userDevice);
+  const { params, validDevice, userDevice } = req;
+  const { data } = req.body;
+  if (validDevice) {
+    // override bookmarks if provided, else merge (i.e. can change language without providing bookmarks)
+    const override = !isNil(data) && !isNil(data.bookmarks);
+    JsonDB.add(dataPathRoot.concat(params.token), userDevice, override);
     res.status(200);
     // console.log('device: ', userDevice);
     //res.send(userDevice);
+  } else {
+    res.status(400);
   }
   next();
 };
@@ -38,7 +64,6 @@ const addDevice = (req, res, next) => {
 const retrieveDevice = (req, res, next) => {
   const token = req.params.token;
   const language = !isNil(req.params.language) ? req.params.language : '';
-  // TODO: bookmarks
   const device = JsonDB.retrieve(dataPathRoot.concat(token));
   if (
     !isNil(device) &&
@@ -67,7 +92,6 @@ const retrieveDevices = () => {
 
 const countDevices = (req, res, next) => {
   const language = !isNil(req.params.language) ? req.params.language : '';
-  // TODO: bookmarks
   try {
     const devices = retrieveDevices();
     let count = 0;
@@ -169,6 +193,7 @@ const removeDevice = (exponentPushToken) => {
 };
 
 module.exports = {
+  prepareDevice,
   addDevice,
   retrieveDevice,
   deleteDevice,

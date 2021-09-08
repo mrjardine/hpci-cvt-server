@@ -19,8 +19,11 @@ if (env === 'DEV') {
       return;
     }
   });
+} else {
+  // TODO: else use postgres for PROD?
+  console.log('env must be DEV. PROD not implemented.');
+  return;
 }
-// TODO: else use postgres for PROD?
 
 // configure express instance, including handling JSON data
 app.disable('x-powered-by');

@@ -1,5 +1,6 @@
 const { apiPathPrefix } = require('../config');
 const {
+  prepareDevice,
   addDevice,
   retrieveDevice,
   deleteDevice,
@@ -26,7 +27,7 @@ const deviceRoutes = (app) => {
     .get([retrieveDevice], (req, res) => {
       res.send();
     })
-    .post([addDevice], (req, res) => {
+    .post([prepareDevice, addDevice], (req, res) => {
       res.send();
     });
 
@@ -36,7 +37,7 @@ const deviceRoutes = (app) => {
     .get([retrieveDevice], (req, res) => {
       res.send();
     })
-    .post([addDevice], (req, res) => {
+    .post([prepareDevice, addDevice], (req, res) => {
       res.send();
     })
     .delete([deleteDevice], (req, res) => {
