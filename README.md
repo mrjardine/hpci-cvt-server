@@ -100,9 +100,8 @@ $ curl -X DELETE "http://localhost:3011/api/v1/devices/xxxxxxxxxxxxxxxxxxxxxx"
 examples:
 
 ````
-# notes: 
+# note:
 #   "to" can also be set to "all", "en" or "fr" to send pn to all devices, or specifically to those with en or fr preference
-#   TODO: when bookmarks are added to db, the device will only receive pns that are product specific 
 
 # general pn to one device
 $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1/push/send" -d '{
@@ -130,7 +129,7 @@ $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1
   "to": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
   "title":"hello",
   "body": "world",
-  "data": { "nid": [15, 16] }
+  "data": { "products": [15, 16] }
 }'
 
 # general pn to specific devices
@@ -158,7 +157,7 @@ $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1
   ],
   "title":"Hello",
   "body": "World!",
-  "data": { "nid": 1 }
+  "data": { "products": 1 }
 }
 ]'
 
@@ -172,12 +171,12 @@ $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1
   "to": "en",
   "title":"Hello",
   "body": "World!",
-  "data": { "nid": [15, 16] }
+  "data": { "products": [15, 16] }
 },{
   "to": "fr",
   "title":"Bonjour",
   "body": "Mon ami!",
-  "data": { "nid": 16 }
+  "data": { "products": 16 }
 }
 ]'
 ````
@@ -187,9 +186,9 @@ $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1
 Gets receipts from Expo, processes and removes stored tickets. See ./notifications/expo.
 Note: can schedule a cron task to run this endpoint daily.
 
-- /api/v1/notifications/:token/:language/:date?
+- /api/v1/notifications/:token/:language/:date
 
-Gets most recent notifications within last x days on or after :date, if provided.
+Gets most recent notifications within last x days on or after :date.
 Note: if :token has stored bookmarks, non-related product notifications will be filtered out.
 
 
