@@ -6,7 +6,7 @@ const {
   deleteDevice,
   countDevices,
   reloadDevices,
-  deviceTokens,
+  deviceTokensForAll,
   deviceTokensForEn,
   deviceTokensForFr
 } = require('../data/device');
@@ -67,7 +67,7 @@ const deviceRoutes = (app) => {
     });
 
   // middleware
-  app.use(deviceTokens);
+  app.use(deviceTokensForAll);
   app.use(deviceTokensForEn);
   app.use(deviceTokensForFr);
 };

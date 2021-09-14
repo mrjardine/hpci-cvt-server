@@ -128,43 +128,40 @@ const reloadDevices = (req, res, next) => {
   next();
 };
 
-const deviceTokens = (req, res, next) => {
+const deviceTokens = (language) => {
   const deviceTokens = [];
   const devices = retrieveDevices();
   devices.forEach((device) => {
-    deviceTokens.push(device.token);
-  });
-  req.deviceTokens = deviceTokens;
-  next();
-};
-
-const deviceTokensForLanguage = (language) => {
-  const deviceTokens = [];
-  const devices = retrieveDevices();
-  devices.forEach((device) => {
-    if (device.language === language) {
+    if (device.language === language || language === lang.all) {
       deviceTokens.push(device.token);
     }
   });
   return deviceTokens;
 };
 
+const deviceTokensForAll = (req, res, next) => {
+  req.deviceTokensForAll = deviceTokens(lang.all);
+  next();
+};
+
 const deviceTokensForEn = (req, res, next) => {
-  req.deviceTokensForEn = deviceTokensForLanguage(lang.english);
+  req.deviceTokensForEn = deviceTokens(lang.english);
   next();
 };
 
 const deviceTokensForFr = (req, res, next) => {
-  req.deviceTokensForFr = deviceTokensForLanguage(lang.french);
+  req.deviceTokensForFr = deviceTokens(lang.french);
   next();
 };
 
+const parseToken = (token) => {
+  return token.length === 22
+    ? token
+    : token.replace(expoPNTokenPrefix, '').replace(expoPNTokenSuffix, '');
+};
+
 const checkTokenExists = (token) => {
-  const device = JsonDB.retrieve(
-    dataPathRoot.concat(
-      token.replace(expoPNTokenPrefix, '').replace(expoPNTokenSuffix, '')
-    )
-  );
+  const device = JsonDB.retrieve(dataPathRoot.concat(parseToken(token)));
   if (!isNil(device) && !isNil(device.token)) {
     return true;
   }
@@ -182,10 +179,19 @@ const checkTokensExist = (tokens) => {
   return false;
 };
 
+const retrieveTokenBookmarks = (token) => {
+  const tokenBookmarks = [];
+  const bookmarks = JsonDB.retrieve(
+    dataPathRoot.concat(parseToken(token).concat('/bookmarks'))
+  );
+  bookmarks.forEach((bookmark) => {
+    tokenBookmarks.push(bookmark);
+  });
+  return tokenBookmarks;
+};
+
 const removeDevice = (exponentPushToken) => {
-  const token = exponentPushToken
-    .replace(expoPNTokenPrefix, '')
-    .replace(expoPNTokenSuffix, '');
+  const token = parseToken(exponentPushToken);
   if (token.length === 22) {
     JsonDB.delete(dataPathRoot.concat(token));
     console.log('Removed device: ', exponentPushToken);
@@ -199,10 +205,11 @@ module.exports = {
   deleteDevice,
   countDevices,
   reloadDevices,
-  deviceTokens,
+  deviceTokensForAll,
   deviceTokensForEn,
   deviceTokensForFr,
   checkTokenExists,
   checkTokensExist,
+  retrieveTokenBookmarks,
   removeDevice
 };
