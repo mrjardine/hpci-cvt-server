@@ -1,5 +1,9 @@
 const { lang } = require('../constants/constants');
-const { checkTokenExists, checkTokensExist } = require('../data/device');
+const {
+  checkTokenExists,
+  checkTokensExist,
+  retrieveTokenBookmarks
+} = require('../data/device');
 const { isNil } = require('../utils/util');
 
 const isInvalid = (message) => {
@@ -49,6 +53,26 @@ const isValid = (messages) => {
   return !inValidMessages;
 };
 
+const isProductsInMessage = (message) => {
+  return !isNil(message.data) && !isNil(message.data.products);
+};
+
+const productsInMessage = (message) => {
+  let products = [];
+  if (isProductsInMessage(message)) {
+    if (Array.isArray(message.data.products)) {
+      products = message.data.products;
+    } else {
+      products.push(message.data.products);
+    }
+  }
+  return products;
+};
+
+// 1. deviceToken and language are stored: user has notifications enabled
+// 2. deviceToken has no bookmarks: user will receive all notifications
+// 3. deviceToken has bookmarks: user will receive notifications with no products (general)
+// 4.                            user will receive notifications for bookmarked products
 const prepareMessages = (req, res, next) => {
   // console.log('req.body: ', req.body);
   let messages = [];
@@ -62,25 +86,45 @@ const prepareMessages = (req, res, next) => {
   const validMessages = isValid(messages);
   if (isValid) {
     messages.forEach((message) => {
+      let deviceTokens = [];
       const { to } = message;
       switch (to) {
         case 'all':
-          message.to = req.deviceTokens;
           message.language = lang.all;
+          deviceTokens = req.deviceTokensForAll;
           break;
         case 'en':
-          message.to = req.deviceTokensForEn;
           message.language = lang.english;
+          deviceTokens = req.deviceTokensForEn;
           break;
         case 'fr':
-          message.to = req.deviceTokensForFr;
           message.language = lang.french;
+          deviceTokens = req.deviceTokensForFr;
           break;
         default:
           message.language = isNil(message.language)
             ? lang.english
             : message.language;
           break;
+      }
+      if (['all', 'en', 'fr'].includes(to)) {
+        if (isProductsInMessage(message)) {
+          const toDeviceTokens = [];
+          const products = productsInMessage(message);
+          // include tokens only if there are no bookmarks or if any of the products are bookmarked...
+          deviceTokens.forEach((deviceToken) => {
+            const bookmarks = retrieveTokenBookmarks(deviceToken);
+            if (
+              bookmarks.length === 0 ||
+              bookmarks.some((bookmark) => products.includes(bookmark))
+            ) {
+              toDeviceTokens.push(deviceToken);
+            }
+          });
+          message.to = toDeviceTokens;
+        } else {
+          message.to = deviceTokens;
+        }
       }
     });
   }
