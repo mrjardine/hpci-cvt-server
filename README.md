@@ -233,6 +233,7 @@ Note: if :token has stored bookmarks, non-related product notifications will be 
             },
             "created": "2021-09-08T17:22:22Z"
         }
+    },
     "tickets": {}
 }
 ````
