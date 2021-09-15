@@ -69,6 +69,17 @@ const productsInMessage = (message) => {
   return products;
 };
 
+const deviceTokensInMessage = (message) => {
+  let deviceTokens = [];
+  const { to } = message;
+  if (Array.isArray(to)) {
+    deviceTokens = to;
+  } else {
+    deviceTokens.push(to);
+  }
+  return deviceTokens;
+};
+
 // 1. deviceToken and language are stored: user has notifications enabled
 // 2. deviceToken has no bookmarks: user will receive all notifications
 // 3. deviceToken has bookmarks: user will receive notifications with no products (general)
@@ -84,7 +95,7 @@ const prepareMessages = (req, res, next) => {
     messages.push(req.body);
   }
   const validMessages = isValid(messages);
-  if (isValid) {
+  if (validMessages) {
     messages.forEach((message) => {
       let deviceTokens = [];
       const { to } = message;
@@ -105,26 +116,25 @@ const prepareMessages = (req, res, next) => {
           message.language = isNil(message.language)
             ? lang.english
             : message.language;
+          deviceTokens = deviceTokensInMessage(message);
           break;
       }
-      if (['all', 'en', 'fr'].includes(to)) {
-        if (isProductsInMessage(message)) {
-          const toDeviceTokens = [];
-          const products = productsInMessage(message);
-          // include tokens only if there are no bookmarks or if any of the products are bookmarked...
-          deviceTokens.forEach((deviceToken) => {
-            const bookmarks = retrieveTokenBookmarks(deviceToken);
-            if (
-              bookmarks.length === 0 ||
-              bookmarks.some((bookmark) => products.includes(bookmark))
-            ) {
-              toDeviceTokens.push(deviceToken);
-            }
-          });
-          message.to = toDeviceTokens;
-        } else {
-          message.to = deviceTokens;
-        }
+      if (isProductsInMessage(message)) {
+        const toDeviceTokens = [];
+        const products = productsInMessage(message);
+        // include tokens only if there are no bookmarks or if any of the products are bookmarked...
+        deviceTokens.forEach((deviceToken) => {
+          const bookmarks = retrieveTokenBookmarks(deviceToken);
+          if (
+            bookmarks.length === 0 ||
+            bookmarks.some((bookmark) => products.includes(bookmark))
+          ) {
+            toDeviceTokens.push(deviceToken);
+          }
+        });
+        message.to = toDeviceTokens;
+      } else {
+        message.to = deviceTokens;
       }
     });
   }
