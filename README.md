@@ -91,6 +91,17 @@ $ curl -X POST "http://localhost:3011/api/v1/devices/xxxxxxxxxxxxxxxxxxxxxx"
 $ curl -X POST "http://localhost:3011/api/v1/devices/xxxxxxxxxxxxxxxxxxxxxx.en"
 $ curl -X POST "http://localhost:3011/api/v1/devices/xxxxxxxxxxxxxxxxxxxxxx.fr"
 $ curl -X DELETE "http://localhost:3011/api/v1/devices/xxxxxxxxxxxxxxxxxxxxxx"
+
+# post body [optional] example:
+{
+  "data": {
+    "bookmarks": [
+      15,
+      16
+    ],
+    "language": "fr"
+  }
+}
 ````
 
 ### notifications
@@ -101,7 +112,7 @@ examples:
 
 ````
 # note:
-#   "to" can also be set to "all", "en" or "fr" to send pn to all devices, or specifically to those with en or fr preference
+#   set "to" to "all", "en" or "fr" to send pn to all devices, or specifically to those with en or fr preference
 
 # general pn to one device
 $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1/push/send" -d '{
@@ -202,11 +213,27 @@ Note: if :token has stored bookmarks, non-related product notifications will be 
         "xxxxxxxxxxxxxxxxxxxxxx": {
             "token": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
             "language": "en",
-            "bookmarks": [],
+            "bookmarks": [
+              15
+            ],
             "updated": "2021-08-11T15:01:27Z"
         }
     },
-    "notifications": {},
+    "notifications": {
+        "94b68fd5-eac0-43fe-b13d-44b0273ab042": {
+            "to": "en",
+            "language": "en",
+            "title": "Hello",
+            "body": "World!",
+            "data": {
+                "products": [
+                    15,
+                    16
+                ]
+            },
+            "created": "2021-09-08T17:22:22Z"
+        }
+    },
     "tickets": {}
 }
 ````
@@ -224,6 +251,5 @@ HPCI CVT API Server
 
 - set up and send Expo 'security token'
 - complete handling of errors from Expo
-- bookmarks
-- get/pull notifications
+- get/pull notifications, filter for bookmarks
 - db implementation for prod
