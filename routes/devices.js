@@ -1,20 +1,25 @@
 const { apiPathPrefix } = require('../config');
 const {
+  deviceTokensForAll,
+  deviceTokensForEn,
+  deviceTokensForFr,
   prepareDevice,
   addDevice,
   retrieveDevice,
   deleteDevice,
   countDevices,
-  reloadDevices,
-  deviceTokensForAll,
-  deviceTokensForEn,
-  deviceTokensForFr
+  reloadDevices
 } = require('../data/device');
 
 const deviceRoutes = (app) => {
   const devicesPathPrefix = apiPathPrefix.concat('devices');
   const langRE = '(en|fr)';
   const tokenRE = '(\\b\\S{22}\\b)'; // i.e. 22 length, non-whitespace id between [] in ExponentPushToken[...]
+
+  // middleware
+  app.use(deviceTokensForAll);
+  app.use(deviceTokensForEn);
+  app.use(deviceTokensForFr);
 
   // /devices/:token.:language
   app
@@ -65,11 +70,6 @@ const deviceRoutes = (app) => {
     .get([reloadDevices], (req, res) => {
       res.send();
     });
-
-  // middleware
-  app.use(deviceTokensForAll);
-  app.use(deviceTokensForEn);
-  app.use(deviceTokensForFr);
 };
 
 module.exports = deviceRoutes;

@@ -4,6 +4,10 @@ const {
   checkTokensExist,
   retrieveTokenBookmarks
 } = require('../data/device');
+const {
+  isProductsInNotification,
+  productsInNotification
+} = require('../data/notification');
 const { isNil } = require('../utils/util');
 
 const isInvalid = (message) => {
@@ -51,22 +55,6 @@ const isValid = (messages) => {
     }
   });
   return !inValidMessages;
-};
-
-const isProductsInMessage = (message) => {
-  return !isNil(message.data) && !isNil(message.data.products);
-};
-
-const productsInMessage = (message) => {
-  let products = [];
-  if (isProductsInMessage(message)) {
-    if (Array.isArray(message.data.products)) {
-      products = message.data.products;
-    } else {
-      products.push(message.data.products);
-    }
-  }
-  return products;
 };
 
 const deviceTokensInMessage = (message) => {
@@ -119,9 +107,9 @@ const prepareMessages = (req, res, next) => {
           deviceTokens = deviceTokensInMessage(message);
           break;
       }
-      if (isProductsInMessage(message)) {
+      if (isProductsInNotification(message)) {
         const toDeviceTokens = [];
-        const products = productsInMessage(message);
+        const products = productsInNotification(message);
         // include tokens only if there are no bookmarks or if any of the products are bookmarked...
         deviceTokens.forEach((deviceToken) => {
           const bookmarks = retrieveTokenBookmarks(deviceToken);

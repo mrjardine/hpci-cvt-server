@@ -42,6 +42,11 @@ API_PATH_PREFIX=/api/v1/
 # db connection info...
 DB_PATH_DEV=./data/db/
 DB_FILE_DEV=jsonDB.json
+
+# config
+MAX_TOKENS_TO_STORE_IN_NOTIFICATIONS_TO=10
+MAX_VIEWABLE_LATEST_NOTIFICATIONS=10
+MAX_WINDOW_IN_DAYS_LATEST_NOTIFICATIONS=10
 ````
 
 3. Set up DEV DB:
@@ -113,6 +118,14 @@ examples:
 ````
 # note:
 #   set "to" to "all", "en" or "fr" to send pn to all devices, or specifically to those with en or fr preference
+
+# post data [optional] example:
+{
+  "data": {
+    "products": 16,
+    "link": "https://covid-vaccine.canada.ca/comirnaty/product-details"
+  }
+}
 
 # general pn to one device
 $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1/push/send" -d '{
@@ -197,10 +210,10 @@ $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1
 Gets receipts from Expo, processes and removes stored tickets. See ./notifications/expo.
 Note: can schedule a cron task to run this endpoint daily.
 
-- /api/v1/notifications/:token/:language/:date
+- /api/v1/notifications/:token
 
-Gets most recent notifications within last x days on or after :date.
-Note: if :token has stored bookmarks, non-related product notifications will be filtered out.
+Gets most recent notifications within last x days.
+Note: if :token has stored bookmarks, unrelated product notifications will be filtered out.
 
 
 ## data
@@ -251,5 +264,4 @@ HPCI CVT API Server
 
 - set up and send Expo 'security token'
 - complete handling of errors from Expo
-- get/pull notifications, filter for bookmarks
 - db implementation for prod

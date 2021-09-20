@@ -90,44 +90,6 @@ const retrieveDevices = () => {
   return Object.values(JsonDB.retrieve(dataPathRoot));
 };
 
-const countDevices = (req, res, next) => {
-  const language = !isNil(req.params.language) ? req.params.language : '';
-  try {
-    const devices = retrieveDevices();
-    let count = 0;
-    let message = 'total device tokens stored';
-    if (language === '') {
-      count = devices.length;
-    } else {
-      for (var i = 0; i < devices.length; i++) {
-        if ('language' in devices[i] && devices[i].language === language)
-          count++;
-      }
-      message =
-        'total device tokens stored with ' + language + ' language preference';
-    }
-    res
-      .status(200)
-      .send(
-        JSON.parse('{"'.concat(message).concat('": ').concat(count).concat('}'))
-      );
-  } catch (error) {
-    // console.log(error);
-    res.status(404);
-  }
-  next();
-};
-
-const reloadDevices = (req, res, next) => {
-  if (env === 'DEV') {
-    JsonDB.reload();
-    res.status(200);
-  } else {
-    res.status(404); // restart server
-  }
-  next();
-};
-
 const deviceTokens = (language) => {
   const deviceTokens = [];
   const devices = retrieveDevices();
@@ -151,6 +113,46 @@ const deviceTokensForEn = (req, res, next) => {
 
 const deviceTokensForFr = (req, res, next) => {
   req.deviceTokensForFr = deviceTokens(lang.french);
+  next();
+};
+
+const countDevices = (req, res, next) => {
+  const language = !isNil(req.params.language) ? req.params.language : '';
+  const { deviceTokensForAll, deviceTokensForEn, deviceTokensForFr } = req;
+  try {
+    let count = 0;
+    let message = 'total devices';
+    switch (language) {
+      case lang.english:
+        count = deviceTokensForEn.length;
+        message = message.concat(' with en language preference');
+        break;
+      case lang.french:
+        count = deviceTokensForFr.length;
+        message = message.concat(' with fr language preference');
+        break;
+      default:
+        count = deviceTokensForAll.length;
+    }
+    res
+      .status(200)
+      .send(
+        JSON.parse('{"'.concat(message).concat('": ').concat(count).concat('}'))
+      );
+  } catch (error) {
+    // console.log(error);
+    res.status(404);
+  }
+  next();
+};
+
+const reloadDevices = (req, res, next) => {
+  if (env === 'DEV') {
+    JsonDB.reload();
+    res.status(200);
+  } else {
+    res.status(404); // restart server
+  }
   next();
 };
 
@@ -203,11 +205,11 @@ module.exports = {
   addDevice,
   retrieveDevice,
   deleteDevice,
-  countDevices,
-  reloadDevices,
   deviceTokensForAll,
   deviceTokensForEn,
   deviceTokensForFr,
+  countDevices,
+  reloadDevices,
   checkTokenExists,
   checkTokensExist,
   retrieveTokenBookmarks,
