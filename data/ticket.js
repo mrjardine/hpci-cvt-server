@@ -1,6 +1,6 @@
 const JsonDB = require('./JsonDB');
 const { isNil } = require('../utils/util');
-const { now, isBeforeAnHourAgo } = require('../utils/day');
+const { isBeforeAnHourAgo, now } = require('../utils/day');
 
 const dataPathRoot = '/tickets/';
 
