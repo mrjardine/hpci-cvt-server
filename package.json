@@ -1,5 +1,5 @@
 {
-  "name": "hpci-cvt-server",
+  "name": "heroku-cvt-pns",
   "version": "0.0.1",
   "description": "NodeJS API server for HPCI CVT.",
   "main": "server.js",
@@ -11,7 +11,8 @@
   "keywords": [
     "node",
     "express",
-    "expo server sdk"
+    "expo server sdk",
+    "heroku"
   ],
   "author": "Mike Jardine",
   "license": "MIT",
@@ -31,6 +32,9 @@
     "eslint-plugin-prettier": "^3.4.0",
     "nodemon": "^2.0.12",
     "prettier": "2.3.2"
+  },
+  "engines": {
+    "node": "14.15.5"
   },
   "prettier": {
     "singleQuote": true,
