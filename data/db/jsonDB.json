@@ -1,0 +1,30 @@
+{
+    "devices": {
+        "Y5kxZ_Fo6AFEEExFQaOc-Z": {
+            "token": "ExponentPushToken[Y5kxZ_Fo6AFEEExFQaOc-Z]",
+            "language": "en",
+            "bookmarks": [
+                15,
+                16
+            ],
+            "updated": "2021-08-11T15:02:53Z"
+        },
+        "HcIhZ3ENscQ8_B2rEenhrq": {
+            "token": "ExponentPushToken[HcIhZ3ENscQ8_B2rEenhrq]",
+            "language": "en",
+            "bookmarks": [],
+            "updated": "2021-08-11T15:03:49Z"
+        },
+        "SAbN0HJTbvM3hZweMzTHPu": {
+            "token": "ExponentPushToken[SAbN0HJTbvM3hZweMzTHPu]",
+            "language": "fr",
+            "bookmarks": [
+                15,
+                16
+            ],
+            "updated": "2021-09-14T16:44:33Z"
+        }
+    },
+    "notifications": {},
+    "tickets": {}
+}
