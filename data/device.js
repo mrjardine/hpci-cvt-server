@@ -5,25 +5,39 @@ const {
   expoPNTokenSuffix
 } = require('../constants/constants');
 const JsonDB = require('./JsonDB');
-const { isNil } = require('../utils/util');
+const { isNil, isBoolean } = require('../utils/util');
 const { now } = require('../utils/day');
 
 const dataPathRoot = '/devices/';
 
-const device = (token, language = lang.english, bookmarks = []) => {
+const device = (
+  token,
+  language = lang.english,
+  notifications,
+  bookmarks = []
+) => {
   return {
     token: expoPNTokenPrefix.concat(token).concat(expoPNTokenSuffix), // token: 22 length, non-whitespace id between [] in ExponentPushToken[...]
     language: language === 'fr' ? lang.french : lang.english,
+    notifications: {
+      enabled: notifications.enabled,
+      newProducts: notifications.newProducts,
+      bookmarkedProducts: notifications.bookmarkedProducts
+    },
     bookmarks: bookmarks && bookmarks.map((x) => x),
     updated: now()
   };
 };
 
-const isValid = (token, language, bookmarks) => {
+const isValid = (token, language, notifications, bookmarks) => {
   return (
     !isNil(token) &&
     token.length === 22 &&
     (language === lang.english || language === lang.french) &&
+    !isNil(notifications) &&
+    isBoolean(notifications.enabled) &&
+    isBoolean(notifications.newProducts) &&
+    isBoolean(notifications.bookmarkedProducts) &&
     (isNil(bookmarks) || Array.isArray(bookmarks))
   );
 };
@@ -37,10 +51,14 @@ const prepareDevice = (req, res, next) => {
   } else {
     languagePref = !isNil(languagePref) ? languagePref : lang.english; // reset to en if language is not provided
   }
+  let notifications =
+    !isNil(data) && !isNil(data.notifications)
+      ? data.notifications
+      : { enabled: true, newProducts: true, bookmarkedProducts: true };
   let bookmarks = !isNil(data) && !isNil(data.bookmarks) ? data.bookmarks : [];
-  req.validDevice = isValid(token, languagePref, bookmarks);
+  req.validDevice = isValid(token, languagePref, notifications, bookmarks);
   if (req.validDevice) {
-    req.userDevice = device(token, languagePref, bookmarks);
+    req.userDevice = device(token, languagePref, notifications, bookmarks);
   }
   next();
 };
@@ -94,8 +112,11 @@ const deviceTokens = (language) => {
   const deviceTokens = [];
   const devices = retrieveDevices();
   devices.forEach((device) => {
-    if (device.language === language || language === lang.all) {
-      deviceTokens.push(device.token);
+    // must have notifications enabled
+    if (device.notifications.enabled) {
+      if (device.language === language || language === lang.all) {
+        deviceTokens.push(device.token);
+      }
     }
   });
   return deviceTokens;
@@ -192,6 +213,15 @@ const retrieveTokenBookmarks = (token) => {
   return tokenBookmarks;
 };
 
+const retrieveTokenNotifications = (token) => {
+  const notificationsPrefs = JsonDB.retrieve(
+    dataPathRoot.concat(parseToken(token).concat('/notifications'))
+  );
+  return notificationsPrefs.enabled
+    ? notificationsPrefs
+    : { enabled: false, newProducts: false, bookmarkedProducts: false };
+};
+
 const removeDevice = (exponentPushToken) => {
   const token = parseToken(exponentPushToken);
   if (token.length === 22) {
@@ -213,5 +243,6 @@ module.exports = {
   checkTokenExists,
   checkTokensExist,
   retrieveTokenBookmarks,
+  retrieveTokenNotifications,
   removeDevice
 };

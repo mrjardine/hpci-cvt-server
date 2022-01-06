@@ -161,11 +161,17 @@ const readReceipts = async (req, res, next) => {
         console.log(error);
       }
     }
-    console.log(`readReceipts: Processed ${receiptIds.length} tickets.`);
-    res.status(200);
+    // console.log(`readReceipts: Processed ${receiptIds.length} tickets.`);
+    res
+      .status(200)
+      .send(
+        JSON.parse(
+          '{"tickets processed": '.concat(receiptIds.length).concat('}')
+        )
+      );
   } else {
-    console.log('readReceipts: There are no tickets to process.');
-    res.status(404);
+    // console.log('readReceipts: There are no tickets to process.');
+    res.status(200).send(JSON.parse('{"tickets processed": 0}'));
   }
   next();
 };

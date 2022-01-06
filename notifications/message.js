@@ -1,8 +1,9 @@
-const { lang } = require('../constants/constants');
+const { lang, messageType } = require('../constants/constants');
 const {
   checkTokenExists,
   checkTokensExist,
-  retrieveTokenBookmarks
+  retrieveTokenBookmarks,
+  retrieveTokenNotifications
 } = require('../data/device');
 const {
   isProductsInNotification,
@@ -20,7 +21,15 @@ const isInvalid = (message) => {
       title.trim() !== '' &&
       body.trim() !== '' &&
       (isNil(data) ||
-        (!isNil(data) && (!isNil(data.products) || !isNil(data.link)))) &&
+        (!isNil(data) &&
+          ((!isNil(data.messageType) &&
+            [
+              messageType.general,
+              messageType.newProduct,
+              messageType.productUpdate
+            ].indexOf(data.messageType) >= 0) ||
+            !isNil(data.products) ||
+            !isNil(data.link)))) &&
       (isNil(language) ||
         (!isNil(language) &&
           [lang.english, lang.french, lang.all].indexOf(language) >= 0))
@@ -37,7 +46,7 @@ const isInvalid = (message) => {
         }
       }
     }
-    throw 'Invalid message (to, title, and body are required, token(s) must be registered and stored, and data must include products and/or link if provided).';
+    throw 'Invalid message (to, title, and body are required, token(s) must be registered and stored, and data must include messageType, products and/or link if provided).';
   } catch (error) {
     console.log(error, message);
     return true;
@@ -68,10 +77,11 @@ const deviceTokensInMessage = (message) => {
   return deviceTokens;
 };
 
-// 1. deviceToken and language are stored: user has notifications enabled
-// 2. deviceToken has no bookmarks: user will receive all notifications
-// 3. deviceToken has bookmarks: user will receive notifications with no products (general)
-// 4.                            user will receive notifications for bookmarked products
+// Message Type         Device Settings                Notes
+// ---------------------------------------------------------------------------------------------------------------------
+// general (default)    enabled                        user will receive general notifications
+// newProduct           enabled, newProducts           user will receive notifications for new products
+// productUpdate        enabled, bookmarkedProducts    user will receive notifications for products they have bookmarked
 const prepareMessages = (req, res, next) => {
   // console.log('req.body: ', req.body);
   let messages = [];
@@ -86,6 +96,7 @@ const prepareMessages = (req, res, next) => {
   if (validMessages) {
     messages.forEach((message) => {
       let deviceTokens = [];
+      let filteredDeviceTokens = [];
       const { to } = message;
       switch (to) {
         case 'all':
@@ -107,22 +118,48 @@ const prepareMessages = (req, res, next) => {
           deviceTokens = deviceTokensInMessage(message);
           break;
       }
-      if (isProductsInNotification(message)) {
-        const toDeviceTokens = [];
-        const products = productsInNotification(message);
-        // include tokens only if there are no bookmarks or if any of the products are bookmarked...
-        deviceTokens.forEach((deviceToken) => {
-          const bookmarks = retrieveTokenBookmarks(deviceToken);
-          if (
-            bookmarks.length === 0 ||
-            bookmarks.some((bookmark) => products.includes(bookmark))
-          ) {
-            toDeviceTokens.push(deviceToken);
+      if (isNil(message.data)) {
+        message.data = {};
+      }
+      if (isNil(message.data.messageType)) {
+        message.data.messageType = messageType.general;
+      }
+      const { messageType: msgType } = message.data;
+      switch (msgType) {
+        case messageType.general:
+          message.to = deviceTokens;
+          break;
+        case messageType.newProduct:
+          deviceTokens.forEach((deviceToken) => {
+            const notificationsPrefs = retrieveTokenNotifications(deviceToken);
+            if (notificationsPrefs.newProducts) {
+              filteredDeviceTokens.push(deviceToken);
+            }
+          });
+          message.to = filteredDeviceTokens;
+          break;
+        case messageType.productUpdate:
+          if (isProductsInNotification(message)) {
+            const products = productsInNotification(message);
+            // include tokens only if any of the products are bookmarked...
+            deviceTokens.forEach((deviceToken) => {
+              const notificationsPrefs =
+                retrieveTokenNotifications(deviceToken);
+              if (notificationsPrefs.bookmarkedProducts) {
+                const bookmarks = retrieveTokenBookmarks(deviceToken);
+                if (bookmarks.some((bookmark) => products.includes(bookmark))) {
+                  filteredDeviceTokens.push(deviceToken);
+                }
+              }
+            });
+          } else {
+            console.log(
+              'Message - productUpdate message should identify updated product(s), message: ',
+              message
+            );
           }
-        });
-        message.to = toDeviceTokens;
-      } else {
-        message.to = deviceTokens;
+          message.to = filteredDeviceTokens;
+          break;
       }
     });
   }
