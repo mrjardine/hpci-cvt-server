@@ -1,6 +1,9 @@
 const JsonDB = require('./JsonDB');
 const { v4: uuidv4 } = require('uuid');
-const { retrieveTokenBookmarks } = require('./device');
+const {
+  retrieveTokenBookmarks,
+  retrieveTokenNotifications
+} = require('./device');
 const {
   maxTokensToStore,
   maxViewableLatestNotifications,
@@ -9,7 +12,8 @@ const {
 const {
   expoPNTokenPrefix,
   expoPNTokenSuffix,
-  lang
+  lang,
+  messageType
 } = require('../constants/constants');
 const { isNil } = require('../utils/util');
 const { isAfterDaysAgo, now } = require('../utils/day');
@@ -29,7 +33,7 @@ const notification = (
     language: language, // text: en, fr or all
     title: title, // text
     body: body, // text
-    data: data, // {} with products and/or link, null
+    data: data, // {} with messageType, products and/or link, null
     created: created
   };
 };
@@ -53,8 +57,15 @@ const addNotifications = (req, res, next) => {
     });
     // console.log('Notifications: ', notifications);
     notifications.forEach((notification) => {
-      !isNil(notification.created) &&
-        JsonDB.add(dataPathRoot.concat(uuidv4()), notification);
+      if (notification.to.length > 0) {
+        !isNil(notification.created) &&
+          JsonDB.add(dataPathRoot.concat(uuidv4()), notification);
+      } else {
+        console.log(
+          'Notifications - no recipients identified, skipping save of notification: ',
+          notification
+        );
+      }
     });
   }
   next();
@@ -86,7 +97,10 @@ const createdComparator = (a, b) => {
 
 const retrieveLatestNotifications = (req, res, next) => {
   // get most recent notifications within last x days
-  // note: if :token has stored bookmarks, unrelated product notifications will be filtered out
+  // notes:
+  //   if :token has notifications disabled, response status will be 404
+  //   if :token has newProducts pref disabled, new product messages will be filtered out
+  //   if :token has bookmarkedProducts pref disabled, all product updates will be filtered out, else, unrelated product updates will be filtered out
   const { token } = req.params;
   const { deviceTokensForAll, deviceTokensForFr } = req;
   const tokenFormatted = expoPNTokenPrefix
@@ -96,10 +110,11 @@ const retrieveLatestNotifications = (req, res, next) => {
     const language = deviceTokensForFr.includes(tokenFormatted)
       ? lang.french
       : lang.english;
-    // include tokens only if there are no bookmarks or if any of the products are bookmarked...
     const tokenBookmarks = retrieveTokenBookmarks(token);
-    // retrieve notifications and filter by language and within window, and exclude non-bookmarked products
+    const tokenNotifications = retrieveTokenNotifications(token);
+    // retrieve notifications and filter by language and within window, and filter as appropriate (per above notes)
     const notifications = retrieveNotifications().filter((notification) => {
+      const { messageType: msgType } = notification.data;
       const products = productsInNotification(notification);
       return (
         (notification.language === language ||
@@ -108,9 +123,14 @@ const retrieveLatestNotifications = (req, res, next) => {
           notification.created,
           maxWindowInDaysLatestNotifications
         ) &&
-        (tokenBookmarks.length === 0 ||
-          products.length === 0 ||
-          tokenBookmarks.some((bookmark) => products.includes(bookmark)))
+        (msgType === messageType.general ||
+          (msgType === messageType.newProduct &&
+            tokenNotifications.newProducts) ||
+          (msgType === messageType.productUpdate &&
+            tokenNotifications.bookmarkedProducts &&
+            tokenBookmarks.length > 0 &&
+            products.length > 0 &&
+            tokenBookmarks.some((bookmark) => products.includes(bookmark))))
       );
     });
     // sort desc, and return top maxViewableLatestNotifications
@@ -127,10 +147,10 @@ const retrieveLatestNotifications = (req, res, next) => {
     if (recentNotifications.length > 0) {
       res.status(200).send(recentNotifications);
     } else {
-      res.status(404);
+      res.status(200).send([]); // no recent notifications
     }
   } else {
-    res.status(404);
+    res.status(404); // notifications disabled
   }
   next();
 };
