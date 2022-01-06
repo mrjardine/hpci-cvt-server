@@ -1,3 +1,6 @@
+const expoPNTokenPrefix = 'ExponentPushToken[';
+const expoPNTokenSuffix = ']';
+
 const lang = {
   english: 'en',
   french: 'fr',
@@ -5,11 +8,15 @@ const lang = {
   default: 'en'
 };
 
-const expoPNTokenPrefix = 'ExponentPushToken[';
-const expoPNTokenSuffix = ']';
+const messageType = {
+  general: 'general',
+  productUpdate: 'productUpdate',
+  newProduct: 'newProduct'
+};
 
 module.exports = {
-  lang,
   expoPNTokenPrefix,
-  expoPNTokenSuffix
+  expoPNTokenSuffix,
+  lang,
+  messageType
 };

@@ -1,17 +1,16 @@
 # HPCI CVT API Server
 
 - API server for HPCI CVT
-- Stores Expo Push Notification tokens along with language and bookmark preferences
+- Stores Expo Push Notification tokens along with language, notification and bookmark preferences
 - Sends push notifications via Expo provider
-- Work in progress
 
 
 ### Technical Notes
 
 - Node.js v14.15.5
 - Express v4
-- Nodemon v2
 - Expo Server SDK v3
+- Nodemon v2 (for DEV)
 - node-json-db: v1  (for DEV)
 
 
@@ -97,14 +96,16 @@ $ curl -X POST "http://localhost:3011/api/v1/devices/xxxxxxxxxxxxxxxxxxxxxx.en"
 $ curl -X POST "http://localhost:3011/api/v1/devices/xxxxxxxxxxxxxxxxxxxxxx.fr"
 $ curl -X DELETE "http://localhost:3011/api/v1/devices/xxxxxxxxxxxxxxxxxxxxxx"
 
-# post body [optional] example:
+# post body [optional] example (with defaults shown):
 {
   "data": {
-    "bookmarks": [
-      15,
-      16
-    ],
-    "language": "fr"
+    "bookmarks": [],
+    "language": "en",
+    "notifications": {
+        "enabled": true,
+        "newProducts": true,
+        "bookmarkedProducts": true
+    }
   }
 }
 ````
@@ -116,14 +117,16 @@ $ curl -X DELETE "http://localhost:3011/api/v1/devices/xxxxxxxxxxxxxxxxxxxxxx"
 examples:
 
 ````
-# note:
-#   set "to" to "all", "en" or "fr" to send pn to all devices, or specifically to those with en or fr preference
+# notes:
+#   set "to" to "all", "en" or "fr" to send pn to all devices, or specifically to those with en or fr preference (recommended)
+#   set "messageType" to "general", "newProduct" or "productUpdate" (default: "general"; specify products for "productUpdate")
 
 # post data [optional] example:
 {
   "data": {
     "products": 16,
-    "link": "https://covid-vaccine.canada.ca/comirnaty/product-details"
+    "link": "https://covid-vaccine.canada.ca/comirnaty/product-details",
+    "messageType": "productUpdate"
   }
 }
 
@@ -148,12 +151,12 @@ $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1
   "body": "world"
 }'
 
-# product specific pn to one device
+# product update pn to one device
 $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1/push/send" -d '{
   "to": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
   "title":"hello",
   "body": "world",
-  "data": { "products": [15, 16] }
+  "data": { "products": [15, 16], "messageType": "productUpdate" }
 }'
 
 # general pn to specific devices
@@ -168,7 +171,7 @@ $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1
   "badge": 1
 }'
 
-# two messages, general pn to one device, product specific pn to specific devices
+# two messages, general pn to one device, product update pn to specific devices
 $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1/push/send" -d '[
 {
   "to": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
@@ -181,11 +184,11 @@ $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1
   ],
   "title":"Hello",
   "body": "World!",
-  "data": { "products": 1 }
+  "data": { "products": 1, "messageType": "productUpdate" }
 }
 ]'
 
-# three messages: general pn to all devices, product specific pns to en and fr devices
+# three messages: general pn to all devices, product update pns to en and fr devices
 $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1/push/send" -d '[
 {
   "to": "all",
@@ -195,12 +198,12 @@ $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1
   "to": "en",
   "title":"Hello",
   "body": "World!",
-  "data": { "products": [15, 16] }
+  "data": { "products": [15, 16], "messageType": "productUpdate" }
 },{
   "to": "fr",
   "title":"Bonjour",
   "body": "Mon ami!",
-  "data": { "products": 16 }
+  "data": { "products": 16, "messageType": "productUpdate" }
 }
 ]'
 ````
@@ -208,12 +211,11 @@ $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1
 - /api/v1/push/read/receipts
 
 Gets receipts from Expo, processes and removes stored tickets. See ./notifications/expo.
-Note: can schedule a cron task to run this endpoint daily.
+Note: can schedule a cron task to run this endpoint daily (recommended).
 
 - /api/v1/notifications/:token
 
 Gets most recent notifications within last x days.
-Note: if :token has stored bookmarks, unrelated product notifications will be filtered out.
 
 
 ## data
@@ -226,6 +228,11 @@ Note: if :token has stored bookmarks, unrelated product notifications will be fi
         "xxxxxxxxxxxxxxxxxxxxxx": {
             "token": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
             "language": "en",
+            "notifications": {
+                "enabled": true,
+                "newProducts": true,
+                "bookmarkedProducts": true
+            },
             "bookmarks": [
               15
             ],
@@ -242,7 +249,8 @@ Note: if :token has stored bookmarks, unrelated product notifications will be fi
                 "products": [
                     15,
                     16
-                ]
+                ],
+                "messageType": "productUpdate"
             },
             "created": "2021-09-08T17:22:22Z"
         }
@@ -253,9 +261,13 @@ Note: if :token has stored bookmarks, unrelated product notifications will be fi
 
 ## release notes
 
-### version: 0.0.1 (current)
-
 HPCI CVT API Server
+
+### version: 0.0.2 (current)
+
+- added notifcations settings and message type
+
+### version: 0.0.1
 
 - initial commit
 
