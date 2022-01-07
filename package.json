@@ -32,6 +32,9 @@
     "nodemon": "^2.0.12",
     "prettier": "2.3.2"
   },
+  "engines": {
+    "node": "14.15.5"
+  },
   "prettier": {
     "singleQuote": true,
     "trailingComma": "none"
