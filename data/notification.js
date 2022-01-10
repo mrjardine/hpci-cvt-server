@@ -57,15 +57,9 @@ const addNotifications = (req, res, next) => {
     });
     // console.log('Notifications: ', notifications);
     notifications.forEach((notification) => {
-      if (notification.to.length > 0) {
-        !isNil(notification.created) &&
-          JsonDB.add(dataPathRoot.concat(uuidv4()), notification);
-      } else {
-        console.log(
-          'Notifications - no recipients identified, skipping save of notification: ',
-          notification
-        );
-      }
+      // save notification even if to.length > 0 (e.g. for language changes)
+      !isNil(notification.created) &&
+        JsonDB.add(dataPathRoot.concat(uuidv4()), notification);
     });
   }
   next();
