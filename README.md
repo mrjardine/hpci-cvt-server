@@ -124,7 +124,7 @@ examples:
 # post data [optional] example:
 {
   "data": {
-    "products": 16,
+    "products": "16",
     "link": "https://covid-vaccine.canada.ca/comirnaty/product-details",
     "messageType": "productUpdate"
   }
@@ -156,7 +156,7 @@ $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1
   "to": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
   "title":"hello",
   "body": "world",
-  "data": { "products": [15, 16], "messageType": "productUpdate" }
+  "data": { "products": ["15", "16"], "messageType": "productUpdate" }
 }'
 
 # general pn to specific devices
@@ -184,7 +184,7 @@ $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1
   ],
   "title":"Hello",
   "body": "World!",
-  "data": { "products": 1, "messageType": "productUpdate" }
+  "data": { "products": "1", "messageType": "productUpdate" }
 }
 ]'
 
@@ -198,12 +198,12 @@ $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1
   "to": "en",
   "title":"Hello",
   "body": "World!",
-  "data": { "products": [15, 16], "messageType": "productUpdate" }
+  "data": { "products": ["15", "16"], "messageType": "productUpdate" }
 },{
   "to": "fr",
   "title":"Bonjour",
   "body": "Mon ami!",
-  "data": { "products": 16, "messageType": "productUpdate" }
+  "data": { "products": "16", "messageType": "productUpdate" }
 }
 ]'
 ````
@@ -234,7 +234,7 @@ Gets most recent notifications within last x days.
                 "bookmarkedProducts": true
             },
             "bookmarks": [
-              15
+              "15"
             ],
             "updated": "2021-08-11T15:01:27Z"
         }
@@ -247,8 +247,8 @@ Gets most recent notifications within last x days.
             "body": "World!",
             "data": {
                 "products": [
-                    15,
-                    16
+                    "15",
+                    "16"
                 ],
                 "messageType": "productUpdate"
             },
