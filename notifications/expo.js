@@ -112,6 +112,7 @@ const sendMessages = async (req, res, next) => {
 const readReceipts = async (req, res, next) => {
   const { receiptIds } = req;
   if (receiptIds.length > 0) {
+    const expoPushNotificationReceipts = [];
     // create a new Expo SDK client
     let expo = new Expo();
     // TODO:
@@ -130,6 +131,12 @@ const readReceipts = async (req, res, next) => {
         // notification and information about an error, if one occurred.
         for (let receiptId in receipts) {
           let { status, message, details } = receipts[receiptId];
+          expoPushNotificationReceipts.push({
+            receiptId: receiptId,
+            status: status,
+            message: message,
+            details: details
+          });
           console.log(
             `readReceipts: Expo push notification receipt ${receiptId}: `,
             receipts[receiptId]
@@ -161,6 +168,7 @@ const readReceipts = async (req, res, next) => {
         console.log(error);
       }
     }
+    req.expoPushNotificationReceipts = expoPushNotificationReceipts;
     // console.log(`readReceipts: Processed ${receiptIds.length} tickets.`);
     res
       .status(200)

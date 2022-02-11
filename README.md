@@ -1,6 +1,6 @@
-# HPCI CVT API Server
+# HPCI PNS API Server
 
-- API server for HPCI CVT
+- API server for HPCI PNS
 - Stores Expo Push Notification tokens along with language, notification and bookmark preferences
 - Sends push notifications via Expo provider
 
@@ -118,8 +118,10 @@ examples:
 
 ````
 # notes:
-#   set "to" to "all", "en" or "fr" to send pn to all devices, or specifically to those with en or fr preference (recommended)
-#   set "messageType" to "general", "newProduct" or "productUpdate" (default: "general"; specify products for "productUpdate")
+#   set "to" to "en" or "fr", or "all" to send pn to all devices
+#     (recommended: send both "en" and "fr" messages in same post)
+#   set "messageType" to "general", "newProduct" or "productUpdate"
+#     (default: "general"; specify product nid(s) for "productUpdate", product nid for "newProduct")
 
 # post data [optional] example:
 {
@@ -210,7 +212,7 @@ $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1
 
 - /api/v1/push/read/receipts
 
-Gets receipts from Expo, processes and removes stored tickets. See ./notifications/expo.
+Gets receipts from Expo, processes and removes stored tickets, stores receipts. See ./notifications/expo.
 Note: can schedule a cron task to run this endpoint daily (recommended).
 
 - /api/v1/notifications/:token
@@ -240,8 +242,10 @@ Gets most recent notifications within last x days.
         }
     },
     "notifications": {
-        "94b68fd5-eac0-43fe-b13d-44b0273ab042": {
+        "94b68fd5-eac0-43fe-b13d-44b0273ab042": {,
+            "notificationId": "d08130f5-e98b-4228-92db-230daf512f12",
             "to": "en",
+            "toCount": 1,
             "language": "en",
             "title": "Hello",
             "body": "World!",
@@ -250,11 +254,13 @@ Gets most recent notifications within last x days.
                     "15",
                     "16"
                 ],
-                "messageType": "productUpdate"
+                "messageType": "productUpdate",
+                "link": ""
             },
             "created": "2021-09-08T17:22:22Z"
         }
     },
+    "receipts": {},
     "tickets": {}
 }
 ````

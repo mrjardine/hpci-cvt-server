@@ -1,9 +1,10 @@
+const { v4: uuidv4 } = require('uuid');
 const { lang, messageType } = require('../constants/constants');
 const {
   checkTokenExists,
   checkTokensExist,
   retrieveTokenBookmarks,
-  retrieveTokenNotifications
+  retrieveTokenNotificationsPrefs
 } = require('../data/device');
 const {
   isProductsInNotification,
@@ -97,6 +98,7 @@ const prepareMessages = (req, res, next) => {
     messages.forEach((message) => {
       let deviceTokens = [];
       let filteredDeviceTokens = [];
+      message.id = uuidv4();
       const { to } = message;
       switch (to) {
         case 'all':
@@ -128,15 +130,18 @@ const prepareMessages = (req, res, next) => {
       switch (msgType) {
         case messageType.general:
           message.to = deviceTokens;
+          message.toCount = deviceTokens.length;
           break;
         case messageType.newProduct:
           deviceTokens.forEach((deviceToken) => {
-            const notificationsPrefs = retrieveTokenNotifications(deviceToken);
+            const notificationsPrefs =
+              retrieveTokenNotificationsPrefs(deviceToken);
             if (notificationsPrefs.newProducts) {
               filteredDeviceTokens.push(deviceToken);
             }
           });
           message.to = filteredDeviceTokens;
+          message.toCount = filteredDeviceTokens.length;
           break;
         case messageType.productUpdate:
           if (isProductsInNotification(message)) {
@@ -144,7 +149,7 @@ const prepareMessages = (req, res, next) => {
             // include tokens only if any of the products are bookmarked...
             deviceTokens.forEach((deviceToken) => {
               const notificationsPrefs =
-                retrieveTokenNotifications(deviceToken);
+                retrieveTokenNotificationsPrefs(deviceToken);
               if (notificationsPrefs.bookmarkedProducts) {
                 const bookmarks = retrieveTokenBookmarks(deviceToken);
                 if (bookmarks.some((bookmark) => products.includes(bookmark))) {
@@ -159,6 +164,7 @@ const prepareMessages = (req, res, next) => {
             );
           }
           message.to = filteredDeviceTokens;
+          message.toCount = filteredDeviceTokens.length;
           break;
       }
     });

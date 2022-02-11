@@ -3,6 +3,7 @@ const { prepareMessages } = require('../notifications/message');
 const { sendMessages, readReceipts } = require('../notifications/expo');
 const { addNotifications } = require('../data/notification');
 const { addTickets, getTickets, removeTickets } = require('../data/ticket');
+const { addReceipts } = require('../data/receipt');
 
 const pushRoutes = (app) => {
   const pushPathPrefix = apiPathPrefix.concat('push');
@@ -21,10 +22,13 @@ const pushRoutes = (app) => {
   // /push/read/receipts
   app
     .route(pushPathPrefix.concat('/read/receipts'))
-    .post([getTickets, readReceipts, removeTickets], (req, res) => {
-      // console.log("read receipts... ", req.route.path);
-      res.send();
-    });
+    .post(
+      [getTickets, readReceipts, addReceipts, removeTickets],
+      (req, res) => {
+        // console.log("read receipts... ", req.route.path);
+        res.send();
+      }
+    );
 };
 
 module.exports = pushRoutes;

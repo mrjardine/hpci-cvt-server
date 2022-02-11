@@ -213,7 +213,7 @@ const retrieveTokenBookmarks = (token) => {
   return tokenBookmarks;
 };
 
-const retrieveTokenNotifications = (token) => {
+const retrieveTokenNotificationsPrefs = (token) => {
   const notificationsPrefs = JsonDB.retrieve(
     dataPathRoot.concat(parseToken(token).concat('/notifications'))
   );
@@ -243,6 +243,6 @@ module.exports = {
   checkTokenExists,
   checkTokensExist,
   retrieveTokenBookmarks,
-  retrieveTokenNotifications,
+  retrieveTokenNotificationsPrefs,
   removeDevice
 };
