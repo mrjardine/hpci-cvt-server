@@ -1,7 +1,7 @@
 {
   "name": "hpci-cvt-server",
   "version": "0.0.2",
-  "description": "NodeJS API server for HPCI CVT.",
+  "description": "NodeJS API server for the HPCI PNS.",
   "main": "server.js",
   "scripts": {
     "start": "nodemon -r dotenv/config server.js --ignore data/db/*",

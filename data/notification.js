@@ -2,7 +2,7 @@ const JsonDB = require('./JsonDB');
 const { v4: uuidv4 } = require('uuid');
 const {
   retrieveTokenBookmarks,
-  retrieveTokenNotifications
+  retrieveTokenNotificationsPrefs
 } = require('./device');
 const {
   maxTokensToStore,
@@ -21,7 +21,9 @@ const { isAfterDaysAgo, now } = require('../utils/day');
 const dataPathRoot = '/notifications/';
 
 const notification = (
+  notificationId,
   to,
+  toCount,
   language,
   title,
   body,
@@ -29,7 +31,9 @@ const notification = (
   created = null
 ) => {
   return {
+    notificationId: notificationId, // uuid
     to: to, // text
+    toCount: toCount, // integer
     language: language, // text: en, fr or all
     title: title, // text
     body: body, // text
@@ -44,10 +48,12 @@ const addNotifications = (req, res, next) => {
   if (!isNil(sentNotifications)) {
     const notifications = sentNotifications.map((sentNotification) => {
       return notification(
+        sentNotification.id,
         Array.isArray(sentNotification.to) &&
           sentNotification.to.length > maxTokensToStore // if >, assume en, fr or all devices
           ? sentNotification.language
           : sentNotification.to.toString(),
+        sentNotification.toCount,
         sentNotification.language,
         sentNotification.title,
         sentNotification.body,
@@ -105,7 +111,7 @@ const retrieveLatestNotifications = (req, res, next) => {
       ? lang.french
       : lang.english;
     const tokenBookmarks = retrieveTokenBookmarks(token);
-    const tokenNotifications = retrieveTokenNotifications(token);
+    const tokenNotifications = retrieveTokenNotificationsPrefs(token);
     // retrieve notifications and filter by language and within window, and filter as appropriate (per above notes)
     const notifications = retrieveNotifications().filter((notification) => {
       const { messageType: msgType } = notification.data;
@@ -132,11 +138,14 @@ const retrieveLatestNotifications = (req, res, next) => {
     const recentNotifications = [];
     let i = 0;
     while (i < notifications.length && i < maxViewableLatestNotifications) {
-      recentNotifications.push(notifications[i]);
+      // deep copy so fields can be deleted from response
+      recentNotifications.push(JSON.parse(JSON.stringify(notifications[i])));
       i++;
     }
     recentNotifications.forEach((notification) => {
+      delete notification.notificationId;
       delete notification.to;
+      delete notification.toCount;
     });
     if (recentNotifications.length > 0) {
       res.status(200).send(recentNotifications);

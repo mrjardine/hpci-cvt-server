@@ -4,36 +4,54 @@ const { isBeforeAnHourAgo, now } = require('../utils/day');
 
 const dataPathRoot = '/tickets/';
 
+// ticketId = receiptId (and = ticket root for JsonDB)
+
 const ticket = (
+  ticketId,
   status,
   expoToken = null,
   message = null,
   details = null,
   receiptId = null,
+  notificationIds = null,
   created = null
 ) => {
   return {
+    ticketId: ticketId, // uuid
     status: status, // text
     expoToken: expoToken, // text
-    message: message, // text, null
-    details: details, // text, null
-    receiptId: receiptId, // uuid, null?
+    message: message, // text
+    details: details, // {}
+    receiptId: receiptId, // uuid
+    notificationIds: notificationIds, // [uuid]
     created: created
   };
 };
 
 const addTickets = (req, res, next) => {
-  const { expoTickets, expoTokens } = req;
+  const { expoTickets, expoTokens, sentNotifications } = req;
   // console.log('Expo tickets: ', expoTickets);
   // console.log('Sent expo tokens:', expoTokens);
   if (!isNil(expoTickets)) {
+    const notificationIds = [];
+    sentNotifications.forEach((notification) => {
+      notificationIds.push(notification.id);
+    });
+    if (expoTickets.length !== expoTokens.length) {
+      // lengths should match, read receipts could be affected if not (e.g. when handling errors)
+      console.warn(
+        `Mismatch between number of tickets received from Expo (${expoTickets.length}) and associated tokens (${expoTokens.length}) for notifications ${sentNotifications}.`
+      );
+    }
     const tickets = expoTickets.map((expoTicket, index) => {
       return ticket(
+        expoTicket.id,
         expoTicket.status,
         expoTokens[index],
         !isNil(expoTicket.message) ? expoTicket.message : null,
         !isNil(expoTicket.details) ? expoTicket.details : null,
         !isNil(expoTicket.id) ? expoTicket.id : null,
+        !isNil(notificationIds) ? notificationIds : null,
         now()
       );
     });
@@ -75,6 +93,14 @@ const getExpoTokenByReceiptId = (receiptId) => {
   return null;
 };
 
+const getNotificationIdsByReceiptId = (receiptId) => {
+  const ticket = JsonDB.retrieve(dataPathRoot.concat(receiptId));
+  if (!isNil(ticket) && !isNil(ticket.notificationIds)) {
+    return ticket.notificationIds;
+  }
+  return [];
+};
+
 const removeTickets = async (req, res, next) => {
   const { receiptIds } = req;
   receiptIds.forEach((receiptId) => {
@@ -88,5 +114,6 @@ module.exports = {
   addTickets,
   getTickets,
   getExpoTokenByReceiptId,
+  getNotificationIdsByReceiptId,
   removeTickets
 };
