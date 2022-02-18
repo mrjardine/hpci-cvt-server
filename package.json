@@ -1,10 +1,11 @@
 {
   "name": "hpci-cvt-server",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "NodeJS API server for the HPCI PNS.",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon -r dotenv/config server.js --ignore data/db/*",
+    "start": "node -r dotenv/config server.js",
+    "nodemon": "nodemon -r dotenv/config server.js --ignore data/db/*.json",
     "test": "echo \\\"Error: no test specified\\\" && exit 1",
     "lint": "eslint . --ext .js"
   },
@@ -20,6 +21,7 @@
     "expo-server-sdk": "^3.6.0",
     "express": "^4.17.1",
     "node-json-db": "^1.3.0",
+    "pg": "^8.7.3",
     "uuid": "^8.3.2"
   },
   "devDependencies": {

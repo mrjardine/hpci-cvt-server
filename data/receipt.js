@@ -1,6 +1,8 @@
-const JsonDB = require('./JsonDB');
 const { v4: uuidv4 } = require('uuid');
+const db = require('./db');
+const JsonDB = require('./JsonDB');
 const { getNotificationIdsByReceiptId } = require('./ticket');
+const { env } = require('../config');
 const { isNil } = require('../utils/util');
 const { now } = require('../utils/day');
 
@@ -20,15 +22,15 @@ const receipt = (
   };
 };
 
-const addReceipts = (req, res, next) => {
+const addReceipts = async (req, res, next) => {
   const { expoPushNotificationReceipts } = req;
-  // console.log('Expo pn receipts: ', expoPushNotificationReceipts);
   if (
     !isNil(expoPushNotificationReceipts) &&
     expoPushNotificationReceipts.length > 0
   ) {
-    const receipts = expoPushNotificationReceipts.map((expoReceipt, index) => {
-      const notificationIds = getNotificationIdsByReceiptId(
+    const receipts = [];
+    for (const expoReceipt of expoPushNotificationReceipts) {
+      const notificationIds = await getNotificationIdsByReceiptId(
         expoReceipt.receiptId
       );
       const expoReceiptData = {
@@ -40,18 +42,33 @@ const addReceipts = (req, res, next) => {
       if (!isNil(expoReceipt.details)) {
         expoReceiptData.details = expoReceipt.details;
       }
-      return receipt(
-        expoReceipt.receiptId,
-        expoReceiptData,
-        notificationIds,
-        now()
+      receipts.push(
+        receipt(expoReceipt.receiptId, expoReceiptData, notificationIds, now())
       );
-    });
-    // console.log('receipts: ', receipts);
-    receipts.forEach((receipt) => {
-      !isNil(receipt.receiptId) &&
-        JsonDB.add(dataPathRoot.concat(uuidv4()), receipt);
-    });
+    }
+    for (const receipt of receipts) {
+      if (!isNil(receipt.receiptId)) {
+        if (env === 'DEV') {
+          JsonDB.add(dataPathRoot.concat(uuidv4()), receipt);
+        } else {
+          try {
+            const insertText = `INSERT INTO receipts (receipt_id, receipt, notification_ids, created) VALUES ($1, $2, $3, $4) RETURNING *`;
+            const insertValues = [
+              uuidv4(),
+              receipt.receipt,
+              receipt.notificationIds,
+              receipt.created
+            ];
+            await db.query(insertText, insertValues);
+          } catch (error) {
+            console.warn(
+              'WARN [' + now() + '] - Unable to add receipt:',
+              JSON.stringify(receipt)
+            );
+          }
+        }
+      }
+    }
   }
   next();
 };

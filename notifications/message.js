@@ -12,7 +12,7 @@ const {
 } = require('../data/notification');
 const { isNil } = require('../utils/util');
 
-const isInvalid = (message) => {
+const isInvalid = async (message) => {
   const { to, title, body, data, language } = message;
   try {
     if (
@@ -38,11 +38,11 @@ const isInvalid = (message) => {
       if (to === 'all' || to === 'en' || to === 'fr') {
         return false;
       } else if (Array.isArray(to)) {
-        if (checkTokensExist(to)) {
+        if (await checkTokensExist(to)) {
           return false;
         }
       } else if (to.startsWith('Expo')) {
-        if (checkTokenExists(to)) {
+        if (await checkTokenExists(to)) {
           return false;
         }
       }
@@ -54,17 +54,17 @@ const isInvalid = (message) => {
   }
 };
 
-const isValid = (messages) => {
-  let inValidMessages = false;
-  messages.some((message) => {
-    if (isInvalid(message)) {
-      inValidMessages = true;
-      return true;
-    } else {
-      return false;
+const isValid = async (messages) => {
+  let invalidMessages = false;
+  for (let index = 0; index < messages.length; index++) {
+    const message = messages[index];
+    const invalidMessage = await isInvalid(message);
+    if (invalidMessage) {
+      invalidMessages = true;
+      break;
     }
-  });
-  return !inValidMessages;
+  }
+  return !invalidMessages;
 };
 
 const deviceTokensInMessage = (message) => {
@@ -83,8 +83,8 @@ const deviceTokensInMessage = (message) => {
 // general (default)    enabled                        user will receive general notifications
 // newProduct           enabled, newProducts           user will receive notifications for new products
 // productUpdate        enabled, bookmarkedProducts    user will receive notifications for products they have bookmarked
-const prepareMessages = (req, res, next) => {
-  // console.log('req.body: ', req.body);
+const prepareMessages = async (req, res, next) => {
+  // console.log('req.body:', req.body);
   let messages = [];
   if (Array.isArray(req.body)) {
     messages = req.body.map((message) => {
@@ -93,9 +93,9 @@ const prepareMessages = (req, res, next) => {
   } else {
     messages.push(req.body);
   }
-  const validMessages = isValid(messages);
+  const validMessages = await isValid(messages);
   if (validMessages) {
-    messages.forEach((message) => {
+    for (const message of messages) {
       let deviceTokens = [];
       let filteredDeviceTokens = [];
       message.id = uuidv4();
@@ -133,13 +133,14 @@ const prepareMessages = (req, res, next) => {
           message.toCount = deviceTokens.length;
           break;
         case messageType.newProduct:
-          deviceTokens.forEach((deviceToken) => {
-            const notificationsPrefs =
-              retrieveTokenNotificationsPrefs(deviceToken);
+          for (const deviceToken of deviceTokens) {
+            const notificationsPrefs = await retrieveTokenNotificationsPrefs(
+              deviceToken
+            );
             if (notificationsPrefs.newProducts) {
               filteredDeviceTokens.push(deviceToken);
             }
-          });
+          }
           message.to = filteredDeviceTokens;
           message.toCount = filteredDeviceTokens.length;
           break;
@@ -147,19 +148,20 @@ const prepareMessages = (req, res, next) => {
           if (isProductsInNotification(message)) {
             const products = productsInNotification(message);
             // include tokens only if any of the products are bookmarked...
-            deviceTokens.forEach((deviceToken) => {
-              const notificationsPrefs =
-                retrieveTokenNotificationsPrefs(deviceToken);
+            for (const deviceToken of deviceTokens) {
+              const notificationsPrefs = await retrieveTokenNotificationsPrefs(
+                deviceToken
+              );
               if (notificationsPrefs.bookmarkedProducts) {
-                const bookmarks = retrieveTokenBookmarks(deviceToken);
+                const bookmarks = await retrieveTokenBookmarks(deviceToken);
                 if (bookmarks.some((bookmark) => products.includes(bookmark))) {
                   filteredDeviceTokens.push(deviceToken);
                 }
               }
-            });
+            }
           } else {
             console.log(
-              'Message - productUpdate message should identify updated product(s), message: ',
+              'Message - productUpdate message should identify updated product(s), message:',
               message
             );
           }
@@ -167,7 +169,7 @@ const prepareMessages = (req, res, next) => {
           message.toCount = filteredDeviceTokens.length;
           break;
       }
-    });
+    }
   }
   req.messagesToSend = messages;
   req.validMessages = validMessages;

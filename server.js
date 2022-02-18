@@ -1,5 +1,6 @@
 const express = require('express');
 const { devDbFile, devDbPath, env, port } = require('./config');
+const db = require('./data/db');
 
 const app = express();
 
@@ -7,12 +8,13 @@ const app = express();
 const fs = require('fs');
 
 if (env === 'DEV') {
-  // log notice if jsonDB.json cannot be accessed
+  // using jsonDB
+  // log notice and return if jsonDB.json cannot be accessed
   const dbPath = devDbPath.concat(devDbFile);
   fs.access(dbPath, fs.F_OK, (error) => {
     if (error) {
-      console.log(
-        'Unable to access ' +
+      console.error(
+        'ERROR - Unable to access ' +
           dbPath +
           ". The file's initial contents should match jsonDB.initial. (optional)"
       );
@@ -20,9 +22,18 @@ if (env === 'DEV') {
     }
   });
 } else {
-  // TODO: else use postgres for PROD?
-  console.log('env must be DEV. PROD not implemented.');
-  return;
+  // using postgres
+  // log notice and return if db cannot be accessed
+  let dbchk;
+  db.query('SELECT now()')
+    .then((results) => {
+      dbchk = JSON.stringify(results.rows[0]);
+      console.log(`env: ${env}, checking db connection: ${dbchk}.`);
+    })
+    .catch((error) => {
+      console.error('ERROR - Unable to access database.', error);
+      return;
+    });
 }
 
 // configure express instance, including handling JSON data
