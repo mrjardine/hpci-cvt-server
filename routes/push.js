@@ -14,7 +14,7 @@ const pushRoutes = (app) => {
     .post(
       [prepareMessages, sendMessages, addTickets, addNotifications],
       (req, res) => {
-        // console.log("send push notification... ", req.route.path);
+        // console.log("send push notification...", req.route.path);
         res.send();
       }
     );
@@ -25,7 +25,7 @@ const pushRoutes = (app) => {
     .post(
       [getTickets, readReceipts, addReceipts, removeTickets],
       (req, res) => {
-        // console.log("read receipts... ", req.route.path);
+        // console.log("read receipts...", req.route.path);
         res.send();
       }
     );

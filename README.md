@@ -10,8 +10,9 @@
 - Node.js v14.15.5
 - Express v4
 - Expo Server SDK v3
+- node-postgres v8.7
+- node-json-db v1 (for DEV)
 - Nodemon v2 (for DEV)
-- node-json-db: v1  (for DEV)
 
 
 ## Table of Contents
@@ -31,7 +32,7 @@
 
 ````
 # .env
-# DEV
+# DEV or not DEV (e.g. PROD; DEV: jsondb, not DEV: postgres, PGDEV: postgres with query info logging to console)
 NODE_ENV=DEV
 
 PORT=3011
@@ -39,8 +40,15 @@ PORT=3011
 API_PATH_PREFIX=/api/v1/
 
 # db connection info...
+# DEV
 DB_PATH_DEV=./data/db/
 DB_FILE_DEV=jsonDB.json
+# PG
+PGUSER=apostgresuser
+PGHOST=127.0.0.1
+PGPASSWORD=AStrongDBPassword
+PGDATABASE=hpcipns
+PGPORT=5432
 
 # config
 MAX_TOKENS_TO_STORE_IN_NOTIFICATIONS_TO=10
@@ -119,7 +127,7 @@ examples:
 ````
 # notes:
 #   set "to" to "en" or "fr", or "all" to send pn to all devices
-#     (recommended: send both "en" and "fr" messages in same post)
+#     (recommended: send both "en" and "fr" messages in same post, see last 3 examples)
 #   set "messageType" to "general", "newProduct" or "productUpdate"
 #     (default: "general"; specify product nid(s) for "productUpdate", product nid for "newProduct")
 
@@ -208,6 +216,77 @@ $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1
   "data": { "products": "16", "messageType": "productUpdate" }
 }
 ]'
+
+# general pn to en and fr devices
+$ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1/push/send" -d '[
+    {
+        "to": "en",
+        "title": "Hello",
+        "body": "World!",
+        "data": {
+            "messageType": "general",
+            "link": ""
+        }
+    },
+    {
+        "to": "fr",
+        "title": "Bonjour",
+        "body": "Mon ami!",
+        "data": {
+            "messageType": "general",
+            "link": ""
+        }
+    }
+]'
+
+# product update pn to en and fr devices
+$ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1/push/send" -d '[
+    {
+        "to": "en",
+        "title": "Hello",
+        "body": "World!",
+        "data": {
+            "messageType": "productUpdate",
+            "products": "16",
+            "link": ""
+        }
+    },
+    {
+        "to": "fr",
+        "title": "Bonjour",
+        "body": "Mon ami!",
+        "data": {
+            "messageType": "productUpdate",
+            "products": [
+                "15",
+                "16"
+            ],
+            "link": ""
+        }
+    }
+]'
+
+# new product pn to en and fr devices	
+$ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1/push/send" -d '[
+    {
+        "to": "en",
+        "title": "Hello",
+        "body": "World!",
+        "data": {
+            "messageType": "newProduct",
+            "products": "99"
+        }
+    },
+    {
+        "to": "fr",
+        "title": "Bonjour",
+        "body": "Mon ami!",
+        "data": {
+            "messageType": "newProduct",
+            "products": "99"
+        }
+    }
+]'
 ````
 
 - /api/v1/push/read/receipts
@@ -265,11 +344,98 @@ Gets most recent notifications within last x days.
 }
 ````
 
+### db/index (postgres)
+
+````
+CREATE DATABASE "hpcipns"
+    WITH 
+    OWNER = postgres
+    ENCODING = 'UTF8'
+    LC_COLLATE = 'en_US.UTF8'
+    LC_CTYPE = 'en_US.UTF8'
+    TABLESPACE = pg_default
+    CONNECTION LIMIT = -1;
+
+COMMENT ON DATABASE "hpcipns"
+    IS 'database for the Push Notifications Service api';
+
+CREATE TYPE lang_type AS ENUM ('en', 'fr');
+
+CREATE TABLE "devices" (
+    "id" SERIAL PRIMARY KEY,
+    "device_id" character varying(36) NOT NULL,
+    "token" character varying(50) NOT NULL,
+    "language" lang_type NOT NULL DEFAULT 'en',
+    "notifications" jsonb NOT NULL DEFAULT '{"enabled": false}'::jsonb,
+    "bookmarks" character varying(36) ARRAY NOT NULL,
+    "created" timestamptz NOT NULL DEFAULT now(),
+    "updated" timestamptz
+);
+
+COMMENT ON TABLE "devices"
+    IS 'registered device tokens and associated app preferences (anonymous)';
+
+CREATE UNIQUE INDEX "devices_device_id_idx" ON "devices" ("device_id");
+CREATE UNIQUE INDEX "devices_token_idx" ON "devices" ("token");
+
+CREATE TABLE "notifications" (
+    "id" SERIAL PRIMARY KEY,
+    "notification_id" uuid NOT NULL,
+    "to" text NOT NULL,
+    "to_count" integer,
+    "language" lang_type NOT NULL,
+    "title" character varying(256) NOT NULL,
+    "body" character varying(2048) NOT NULL,
+    "data" jsonb,
+    "created" timestamptz NOT NULL DEFAULT now()
+);
+
+COMMENT ON TABLE "notifications"
+    IS 'push notifications sent to registered devices';
+
+CREATE INDEX "notifications_notification_id_idx" ON "notifications" ("notification_id");
+
+CREATE TABLE "tickets" (
+    "id" SERIAL PRIMARY KEY,
+    "ticket_id" uuid NOT NULL,
+    "status" text,
+    "expo_token" character varying(50),
+    "message" text,
+    "details" jsonb,
+    "receipt_id" uuid NOT NULL,
+    "notification_ids" uuid ARRAY NOT NULL,
+    "created" timestamptz NOT NULL DEFAULT now()
+);
+
+COMMENT ON TABLE "tickets"
+    IS 'tickets received from Expo when sending push notifications';
+
+CREATE INDEX "tickets_ticket_id_idx" ON "tickets" ("ticket_id");
+CREATE INDEX "tickets_receipt_id_idx" ON "tickets" ("receipt_id");
+
+CREATE TABLE "receipts" (
+    "id" SERIAL PRIMARY KEY,
+    "receipt_id" uuid NOT NULL,
+    "receipt" jsonb,
+    "notification_ids" uuid ARRAY NOT NULL,
+    "created" timestamptz NOT NULL DEFAULT now()
+);
+
+COMMENT ON TABLE "receipts"
+    IS 'receipts received from Expo';
+
+CREATE INDEX "receipts_receipt_id_idx" ON "receipts" ("receipt_id");
+````
+
 ## release notes
 
 HPCI CVT API Server
 
-### version: 0.0.2 (current)
+### version: 0.0.3 (current)
+
+- added postgres
+
+### version: 0.0.2
 
 - added notifcations settings and message type
 
@@ -282,4 +448,3 @@ HPCI CVT API Server
 
 - set up and send Expo 'security token'
 - complete handling of errors from Expo
-- db implementation for prod
