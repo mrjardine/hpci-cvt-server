@@ -54,7 +54,7 @@ const addTickets = async (req, res, next) => {
         expoTokens[index],
         !isNil(expoTicket.message) ? expoTicket.message : null,
         !isNil(expoTicket.details) ? expoTicket.details : null,
-        !isNil(expoTicket.id) ? expoTicket.id : null,
+        expoTicket.id,
         !isNil(notificationIds) ? notificationIds : null,
         now()
       );

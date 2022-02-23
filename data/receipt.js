@@ -1,4 +1,3 @@
-const { v4: uuidv4 } = require('uuid');
 const db = require('./db');
 const JsonDB = require('./JsonDB');
 const { getNotificationIdsByReceiptId } = require('./ticket');
@@ -49,12 +48,12 @@ const addReceipts = async (req, res, next) => {
     for (const receipt of receipts) {
       if (!isNil(receipt.receiptId)) {
         if (env === 'DEV') {
-          JsonDB.add(dataPathRoot.concat(uuidv4()), receipt);
+          JsonDB.add(dataPathRoot.concat(receipt.receiptId), receipt);
         } else {
           try {
             const insertText = `INSERT INTO receipts (receipt_id, receipt, notification_ids, created) VALUES ($1, $2, $3, $4) RETURNING *`;
             const insertValues = [
-              uuidv4(),
+              receipt.receiptId,
               receipt.receipt,
               receipt.notificationIds,
               receipt.created

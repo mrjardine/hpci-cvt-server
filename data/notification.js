@@ -1,4 +1,3 @@
-const { v4: uuidv4 } = require('uuid');
 const db = require('./db');
 const JsonDB = require('./JsonDB');
 const {
@@ -66,12 +65,15 @@ const addNotifications = async (req, res, next) => {
       // save notification even if to.length = 0 (e.g. for language changes)
       if (!isNil(notification.created)) {
         if (env === 'DEV') {
-          JsonDB.add(dataPathRoot.concat(uuidv4()), notification);
+          JsonDB.add(
+            dataPathRoot.concat(notification.notificationId),
+            notification
+          );
         } else {
           try {
             const insertText = `INSERT INTO notifications (notification_id, "to", to_count, language, title, body, data, created) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`;
             const insertValues = [
-              uuidv4(),
+              notification.notificationId,
               notification.to,
               notification.toCount,
               notification.language,
@@ -101,7 +103,7 @@ const retrieveNotifications = async () => {
   } else {
     try {
       const days = maxWindowInDaysLatestNotifications;
-      const text = `SELECT notification_id as "notificationId", "to", to_count, language, title, body, data, created FROM notifications WHERE created > current_date - interval '${days} days'`;
+      const text = `SELECT notification_id as "notificationId", "to", to_count as "toCount", language, title, body, data, created FROM notifications WHERE created > current_date - interval '${days} days'`;
       const result = await db.query(text);
       if (result.rowCount > 0) {
         result.rows.forEach((row) => {
