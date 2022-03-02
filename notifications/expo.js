@@ -25,7 +25,7 @@ const sendNotifications = async (expo, messages) => {
       // documentation:
       // https://docs.expo.io/push-notifications/sending-notifications/#individual-errors
     } catch (error) {
-      console.log('Error sending notifications: ', error);
+      console.log('Error sending notifications:', error);
     }
   }
   return tickets;
@@ -35,12 +35,9 @@ const sendMessages = async (req, res, next) => {
   const { validMessages, messagesToSend } = req;
   if (validMessages) {
     // create a new Expo SDK client
-    let expo = new Expo();
-    // TODO:
-    // enable expo push security and provide the access token
-    // let expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
-
-    // console.log('messages - prepared: ', messagesToSend);
+    // let expo = new Expo();
+    // expo push security: provide the access token
+    let expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
     const expoTokens = [];
     const messages = [];
     messagesToSend.forEach((message) => {
@@ -73,7 +70,7 @@ const sendMessages = async (req, res, next) => {
     });
     if (messages.length > 0) {
       console.log(
-        'sendMessages: Messages to send to Expo:',
+        'expo.sendMessages: Messages to send to Expo:',
         JSON.stringify(messages)
       );
       try {
@@ -81,7 +78,7 @@ const sendMessages = async (req, res, next) => {
         req.expoTokens = expoTokens;
         req.sentNotifications = messagesToSend;
       } catch (error) {
-        console.log('Error sending notifications: ', error);
+        console.log('Error sending notifications:', error);
       }
     }
     res.status(200);
@@ -112,11 +109,11 @@ const sendMessages = async (req, res, next) => {
 const readReceipts = async (req, res, next) => {
   const { receiptIds } = req;
   if (receiptIds.length > 0) {
+    const expoPushNotificationReceipts = [];
     // create a new Expo SDK client
-    let expo = new Expo();
-    // TODO:
-    // enable expo push security and provide the access token
-    // let expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
+    // let expo = new Expo();
+    // expo push security: provide the access token
+    let expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
 
     const receiptIdChunks = expo.chunkPushNotificationReceiptIds(receiptIds);
     // Like sending notifications, there are different strategies you could use
@@ -124,14 +121,20 @@ const readReceipts = async (req, res, next) => {
     for (let chunk of receiptIdChunks) {
       try {
         let receipts = await expo.getPushNotificationReceiptsAsync(chunk);
-        // console.log('Receipts from Expo: ', receipts);
+        // console.log('Receipts from Expo:', receipts);
 
         // The receipts specify whether Apple or Google successfully received the
         // notification and information about an error, if one occurred.
         for (let receiptId in receipts) {
           let { status, message, details } = receipts[receiptId];
+          expoPushNotificationReceipts.push({
+            receiptId: receiptId,
+            status: status,
+            message: message,
+            details: details
+          });
           console.log(
-            `readReceipts: Expo push notification receipt ${receiptId}: `,
+            `expo.readReceipts: Expo push notification receipt ${receiptId}:`,
             receipts[receiptId]
           );
           if (status === 'ok') {
@@ -147,7 +150,7 @@ const readReceipts = async (req, res, next) => {
               console.log(`The error code is ${details.error}`);
               if (details.error === 'DeviceNotRegistered') {
                 // TODO: Read Handling Errors section for this part
-                const token = getExpoTokenByReceiptId(receiptId);
+                const token = await getExpoTokenByReceiptId(receiptId);
                 if (!isNil(token)) {
                   removeDevice(token);
                 }
@@ -158,9 +161,10 @@ const readReceipts = async (req, res, next) => {
           }
         }
       } catch (error) {
-        console.log(error);
+        console.log('Error in expo.readReceipts:', error);
       }
     }
+    req.expoPushNotificationReceipts = expoPushNotificationReceipts;
     // console.log(`readReceipts: Processed ${receiptIds.length} tickets.`);
     res
       .status(200)

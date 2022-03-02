@@ -17,9 +17,9 @@ const deviceRoutes = (app) => {
   const tokenRE = '(\\b\\S{22}\\b)'; // i.e. 22 length, non-whitespace id between [] in ExponentPushToken[...]
 
   // middleware
-  app.use(deviceTokensForAll);
   app.use(deviceTokensForEn);
   app.use(deviceTokensForFr);
+  app.use(deviceTokensForAll);
 
   // /devices/:token.:language
   app
@@ -53,7 +53,7 @@ const deviceRoutes = (app) => {
   app
     .route(devicesPathPrefix.concat('/count'))
     .get([countDevices], (req, res) => {
-      // console.log("get devices count: ", req.route.path);
+      // console.log("devices count:", req.route.path);
       res.send();
     });
 

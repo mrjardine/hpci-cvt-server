@@ -1,10 +1,11 @@
+const db = require('./db');
 const JsonDB = require('./JsonDB');
-const { v4: uuidv4 } = require('uuid');
 const {
   retrieveTokenBookmarks,
-  retrieveTokenNotifications
+  retrieveTokenNotificationsPrefs
 } = require('./device');
 const {
+  env,
   maxTokensToStore,
   maxViewableLatestNotifications,
   maxWindowInDaysLatestNotifications
@@ -21,7 +22,9 @@ const { isAfterDaysAgo, now } = require('../utils/day');
 const dataPathRoot = '/notifications/';
 
 const notification = (
+  notificationId,
   to,
+  toCount,
   language,
   title,
   body,
@@ -29,7 +32,9 @@ const notification = (
   created = null
 ) => {
   return {
+    notificationId: notificationId, // uuid
     to: to, // text
+    toCount: toCount, // integer
     language: language, // text: en, fr or all
     title: title, // text
     body: body, // text
@@ -38,16 +43,17 @@ const notification = (
   };
 };
 
-const addNotifications = (req, res, next) => {
+const addNotifications = async (req, res, next) => {
   const { sentNotifications } = req;
-  // console.log('Sent notifications: ', sentNotifications);
   if (!isNil(sentNotifications)) {
     const notifications = sentNotifications.map((sentNotification) => {
       return notification(
+        sentNotification.id,
         Array.isArray(sentNotification.to) &&
           sentNotification.to.length > maxTokensToStore // if >, assume en, fr or all devices
           ? sentNotification.language
           : sentNotification.to.toString(),
+        sentNotification.toCount,
         sentNotification.language,
         sentNotification.title,
         sentNotification.body,
@@ -55,18 +61,60 @@ const addNotifications = (req, res, next) => {
         now()
       );
     });
-    // console.log('Notifications: ', notifications);
-    notifications.forEach((notification) => {
-      // save notification even if to.length > 0 (e.g. for language changes)
-      !isNil(notification.created) &&
-        JsonDB.add(dataPathRoot.concat(uuidv4()), notification);
-    });
+    for (const notification of notifications) {
+      // save notification even if to.length = 0 (e.g. for language changes)
+      if (!isNil(notification.created)) {
+        if (env === 'DEV') {
+          JsonDB.add(
+            dataPathRoot.concat(notification.notificationId),
+            notification
+          );
+        } else {
+          try {
+            const insertText = `INSERT INTO notifications (notification_id, "to", to_count, language, title, body, data, created) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`;
+            const insertValues = [
+              notification.notificationId,
+              notification.to,
+              notification.toCount,
+              notification.language,
+              notification.title,
+              notification.body,
+              notification.data,
+              notification.created
+            ];
+            await db.query(insertText, insertValues);
+          } catch (error) {
+            console.warn(
+              'WARN [' + now() + '] - Unable to add notification:',
+              JSON.stringify(notification)
+            );
+          }
+        }
+      }
+    }
   }
   next();
 };
 
-const retrieveNotifications = () => {
-  return Object.values(JsonDB.retrieve(dataPathRoot));
+const retrieveNotifications = async () => {
+  let notifications = [];
+  if (env === 'DEV') {
+    notifications = Object.values(JsonDB.retrieve(dataPathRoot));
+  } else {
+    try {
+      const days = maxWindowInDaysLatestNotifications;
+      const text = `SELECT notification_id as "notificationId", "to", to_count as "toCount", language, title, body, data, created FROM notifications WHERE created > current_date - interval '${days} days'`;
+      const result = await db.query(text);
+      if (result.rowCount > 0) {
+        result.rows.forEach((row) => {
+          notifications.push(row);
+        });
+      }
+    } catch (error) {
+      notifications = [];
+    }
+  }
+  return notifications;
 };
 
 const isProductsInNotification = (notification) => {
@@ -89,7 +137,7 @@ const createdComparator = (a, b) => {
   return a.created < b.created ? 1 : -1;
 };
 
-const retrieveLatestNotifications = (req, res, next) => {
+const retrieveLatestNotifications = async (req, res, next) => {
   // get most recent notifications within last x days
   // notes:
   //   if :token has notifications disabled, response status will be 404
@@ -104,10 +152,11 @@ const retrieveLatestNotifications = (req, res, next) => {
     const language = deviceTokensForFr.includes(tokenFormatted)
       ? lang.french
       : lang.english;
-    const tokenBookmarks = retrieveTokenBookmarks(token);
-    const tokenNotifications = retrieveTokenNotifications(token);
+    const tokenBookmarks = await retrieveTokenBookmarks(token);
+    const tokenNotifications = await retrieveTokenNotificationsPrefs(token);
     // retrieve notifications and filter by language and within window, and filter as appropriate (per above notes)
-    const notifications = retrieveNotifications().filter((notification) => {
+    const result = await retrieveNotifications();
+    const notifications = result.filter((notification) => {
       const { messageType: msgType } = notification.data;
       const products = productsInNotification(notification);
       return (
@@ -132,11 +181,14 @@ const retrieveLatestNotifications = (req, res, next) => {
     const recentNotifications = [];
     let i = 0;
     while (i < notifications.length && i < maxViewableLatestNotifications) {
-      recentNotifications.push(notifications[i]);
+      // deep copy so fields can be removed from response
+      recentNotifications.push(JSON.parse(JSON.stringify(notifications[i])));
       i++;
     }
     recentNotifications.forEach((notification) => {
+      delete notification.notificationId;
       delete notification.to;
+      delete notification.toCount;
     });
     if (recentNotifications.length > 0) {
       res.status(200).send(recentNotifications);
