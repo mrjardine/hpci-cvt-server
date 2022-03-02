@@ -32,7 +32,7 @@
 
 ````
 # .env
-# DEV or not DEV (e.g. PROD; DEV: jsondb, not DEV: postgres, PGDEV: postgres with query info logging to console)
+# DEV or not DEV (e.g. production; DEV: jsondb, not DEV: postgres, PGDEV: postgres with query info logging to console)
 NODE_ENV=DEV
 
 PORT=3011
