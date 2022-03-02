@@ -448,5 +448,4 @@ HPCI CVT API Server
 
 ## TODO
 
-- set up and send Expo 'security token'
 - complete handling of errors from Expo
