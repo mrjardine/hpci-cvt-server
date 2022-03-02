@@ -39,6 +39,8 @@ PORT=3011
 
 API_PATH_PREFIX=/api/v1/
 
+EXPO_ACCESS_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
 # db connection info...
 # DEV
 DB_PATH_DEV=./data/db/

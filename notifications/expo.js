@@ -35,10 +35,9 @@ const sendMessages = async (req, res, next) => {
   const { validMessages, messagesToSend } = req;
   if (validMessages) {
     // create a new Expo SDK client
-    let expo = new Expo();
-    // TODO:
-    // enable expo push security and provide the access token
-    // let expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
+    // let expo = new Expo();
+    // expo push security: provide the access token
+    let expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
     const expoTokens = [];
     const messages = [];
     messagesToSend.forEach((message) => {
@@ -112,10 +111,9 @@ const readReceipts = async (req, res, next) => {
   if (receiptIds.length > 0) {
     const expoPushNotificationReceipts = [];
     // create a new Expo SDK client
-    let expo = new Expo();
-    // TODO:
-    // enable expo push security and provide the access token
-    // let expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
+    // let expo = new Expo();
+    // expo push security: provide the access token
+    let expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
 
     const receiptIdChunks = expo.chunkPushNotificationReceiptIds(receiptIds);
     // Like sending notifications, there are different strategies you could use
