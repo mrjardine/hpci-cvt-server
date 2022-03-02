@@ -16,7 +16,7 @@ if (env === 'DEV') {
       console.error(
         'ERROR - Unable to access ' +
           dbPath +
-          ". The file's initial contents should match jsonDB.initial. (optional)"
+          ". The file's initial contents should match jsonDB.initial."
       );
       return;
     }
