@@ -32,7 +32,7 @@ const deviceRoutes = (app) => {
     .get([retrieveDevice], (req, res) => {
       res.send();
     })
-    .post([prepareDevice, addDevice], (req, res) => {
+    .post([prepareDevice, addDevice, deleteDevice], (req, res) => {
       res.send();
     });
 
@@ -42,7 +42,7 @@ const deviceRoutes = (app) => {
     .get([retrieveDevice], (req, res) => {
       res.send();
     })
-    .post([prepareDevice, addDevice], (req, res) => {
+    .post([prepareDevice, addDevice, deleteDevice], (req, res) => {
       res.send();
     })
     .delete([deleteDevice], (req, res) => {

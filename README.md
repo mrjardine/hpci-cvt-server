@@ -7,7 +7,7 @@
 
 ### Technical Notes
 
-- Node.js v14.15.5
+- Node.js >=16.0.0
 - Express v4
 - Expo Server SDK v3
 - node-postgres v8.7

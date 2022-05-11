@@ -35,7 +35,7 @@
     "prettier": "2.3.2"
   },
   "engines": {
-    "node": "14.15.5"
+    "node": ">=16.0.0"
   },
   "prettier": {
     "singleQuote": true,
