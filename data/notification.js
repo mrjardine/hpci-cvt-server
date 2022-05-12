@@ -102,8 +102,9 @@ const retrieveNotifications = async () => {
     notifications = Object.values(JsonDB.retrieve(dataPathRoot));
   } else {
     try {
-      const days = maxWindowInDaysLatestNotifications;
-      const text = `SELECT notification_id as "notificationId", "to", to_count as "toCount", language, title, body, data, created FROM notifications WHERE created > current_date - interval '${days} days'`;
+      const maxDays = maxWindowInDaysLatestNotifications;
+      const maxNotifications = maxViewableLatestNotifications * 2; // include potential for en and fr
+      const text = `SELECT notification_id as "notificationId", "to", to_count as "toCount", language, title, body, data, created FROM notifications WHERE id > (select max(n2.id) - ${maxNotifications} from notifications n2) AND created > current_date - interval '${maxDays} days'`;
       const result = await db.query(text);
       if (result.rowCount > 0) {
         result.rows.forEach((row) => {
