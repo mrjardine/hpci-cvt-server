@@ -118,6 +118,28 @@ const retrieveNotifications = async () => {
   return notifications;
 };
 
+const retrieveRecentNotificationsWithPushResults = async () => {
+  let notifications = [];
+  if (env === 'DEV') {
+    // not implemented
+  } else {
+    try {
+      const maxDays = maxWindowInDaysLatestNotifications;
+      const maxNotifications = maxViewableLatestNotifications * 2; // include potential for en and fr
+      const text = `select n.created, n.language, substring(n.title, 1, 64) as "title", substring(n.body, 1, 128) as "body", n.data, n.notification_id as "notificationId", n.to_count as "toCount", ((select count(1) from tickets t where (n.notification_id) = any (t.notification_ids)) = 0) as "ticketsProcessed", ((select count(1) from receipts r where (n.notification_id) = any (r.notification_ids)) - (select count(1) from receipts r2 where (n.notification_id) = any (r2.notification_ids) and receipt ->> 'status' = 'ok'))::int as "receiptsStatusNotOkCount" from notifications n where n.id > (select max(n2.id) - ${maxNotifications} from notifications n2) and n.created > current_date - interval '${maxDays} days' and n.to_count > 0 order by n.id`;
+      const result = await db.query(text);
+      if (result.rowCount > 0) {
+        result.rows.forEach((row) => {
+          notifications.push(row);
+        });
+      }
+    } catch (error) {
+      notifications = [];
+    }
+  }
+  return notifications;
+};
+
 const isProductsInNotification = (notification) => {
   return !isNil(notification.data) && !isNil(notification.data.products);
 };
@@ -202,9 +224,62 @@ const retrieveLatestNotifications = async (req, res, next) => {
   next();
 };
 
+const getPushResults = async (req, res, next) => {
+  // get most recent notifications within last x days with results (toCount, ticketsProcessed, receiptsStatusNotOkCount
+  if (env === 'DEV') {
+    res.status(501); // not implemented (i.e. postgres only)
+  } else {
+    const recentNotifications = [];
+    const results = await retrieveRecentNotificationsWithPushResults();
+    results.forEach((result) => {
+      if (
+        !isNil(result.notificationId) &&
+        !isNil(result.toCount) &&
+        result.toCount > 0
+      ) {
+        recentNotifications.push(result);
+      }
+    });
+    if (recentNotifications.length > 0) {
+      res.status(200).send(recentNotifications);
+    } else {
+      res.status(200).send([]); // no recent notifications
+    }
+  }
+  next();
+};
+
+const getPushResultsForNotification = async (req, res, next) => {
+  const notificationId = req.params.notificationId;
+  let notification;
+  if (env === 'DEV') {
+    res.status(501); // not implemented (i.e. postgres only)
+  } else {
+    try {
+      const result = await db.query(
+        `select jsonb_build_object('created', n.created, 'language', n.language, 'title', n.title, 'body', n.body, 'data', n.data, 'notificationId', n.notification_id, 'toCount', n.to_count, 'ticketsProcessed', ((select count(1) from tickets t where (n.notification_id) = any (t.notification_ids)) = 0), 'receiptsStatusNotOk', (select coalesce(jsonb_agg(jsonb_build_object('receiptId', r.receipt_id, 'created', r.created, 'receipt', r.receipt, 'notification_ids', r.notification_ids)), '[]'::jsonb) from receipts r where (n.notification_id) = any (r.notification_ids) and receipt ->> 'status' <> 'ok')) as "notification" from notifications n where n.notification_id = $1::uuid`,
+        [notificationId]
+      );
+      if (result.rowCount === 1) {
+        notification = result.rows[0];
+      }
+    } catch (error) {
+      notification = null;
+    }
+  }
+  if (!isNil(notification) && !isNil(notification.notification)) {
+    res.status(200).send(notification);
+  } else {
+    res.status(404);
+  }
+  next();
+};
+
 module.exports = {
   addNotifications,
   retrieveLatestNotifications,
   isProductsInNotification,
-  productsInNotification
+  productsInNotification,
+  getPushResults,
+  getPushResultsForNotification
 };
