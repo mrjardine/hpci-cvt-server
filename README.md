@@ -27,7 +27,7 @@
 
 1. Install modules: `yarn install`
 
-2. Add .env:
+2. Add and configure .env:
 
 ````
 # .env
@@ -295,7 +295,7 @@ Gets receipts from Expo, processes and removes stored tickets, stores receipts. 
 
 - /api/v1/push/results
 
-Gets most recent push notifications result within last x days with toCount (pn sent to # of devices), ticketsProcessed (flag), and receiptsStatusNotOkCount (# of issues reported by provider).
+Gets most recent push notification results within last x days with toCount (pn sent to # of devices), ticketsProcessed (flag), and receiptsStatusNotOkCount (# of issues reported by provider).
 
 - /api/v1/push/results/:notificationId
 
@@ -439,11 +439,11 @@ CREATE INDEX "receipts_notification_ids_idx" ON "receipts" USING GIN ("notificat
 ## release notes
 
 ## HPCI PNS API Server - Update 0.0.4
----
+
 ### **Steps to upgrade to 0.0.4** (from 0.0.3)
 
 #### 1. Reset the hpcipns Postgres database:
-- drop the database:
+- drop the database
 ````
 DROP DATABASE "hpcipns";
 ````
