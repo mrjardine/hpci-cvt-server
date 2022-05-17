@@ -417,7 +417,6 @@ CREATE TABLE "tickets" (
 COMMENT ON TABLE "tickets"
     IS 'tickets received from Expo when sending push notifications';
 
-CREATE INDEX "tickets_ticket_id_idx" ON "tickets" ("ticket_id");
 CREATE INDEX "tickets_receipt_id_idx" ON "tickets" ("receipt_id");
 CREATE INDEX "tickets_notification_ids_idx" ON "tickets" USING GIN ("notification_ids" array_ops);
 
