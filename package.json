@@ -1,6 +1,6 @@
 {
   "name": "heroku-cvt-pns",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "NodeJS API server for the HPCI PNS.",
   "main": "server.js",
   "scripts": {
@@ -36,7 +36,7 @@
     "prettier": "2.3.2"
   },
   "engines": {
-    "node": "14.15.5"
+    "node": "16.14.2"
   },
   "prettier": {
     "singleQuote": true,

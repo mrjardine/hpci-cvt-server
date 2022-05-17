@@ -1,13 +1,13 @@
 # HPCI PNS API Server
 
-- API server for HPCI PNS
+- API server for HPCI Push Notification Service (PNS)
 - Stores Expo Push Notification tokens along with language, notification and bookmark preferences
 - Sends push notifications via Expo provider
 
 
 ### Technical Notes
 
-- Node.js v14.15.5
+- Node.js >=16.0.0
 - Express v4
 - Expo Server SDK v3
 - node-postgres v8.7
@@ -21,18 +21,17 @@
 - [api](#api)
 - [data](#data)
 - [release notes](#release-notes)
-- [TODO](#TODO)
 
 
 ## install
 
 1. Install modules: `yarn install`
 
-2. Add .env:
+2. Add and configure .env:
 
 ````
 # .env
-# DEV or not DEV (e.g. PROD; DEV: jsondb, not DEV: postgres, PGDEV: postgres with query info logging to console)
+# DEV or not DEV (e.g. production; DEV: jsondb, not DEV: postgres, PGDEV: postgres with query info logging to console)
 NODE_ENV=DEV
 
 PORT=3011
@@ -62,7 +61,11 @@ MAX_WINDOW_IN_DAYS_LATEST_NOTIFICATIONS=10
 
 cp ./data/db/jsonDB.initial ./data/db/jsonDB.json
 
-4. Start: `npm start`
+4. For non-DEV, create Postgres database and update PG connection settings in .env:
+
+See [db/index postgres script](#dbindex-postgres)
+
+5. Start: `npm start`
 
 If needed:
 
@@ -87,7 +90,6 @@ get examples:
 $ curl http://localhost:3011/api/v1/devices/count
 $ curl http://localhost:3011/api/v1/devices/count/en
 $ curl http://localhost:3011/api/v1/devices/count/fr
-$ curl http://localhost:3011/api/v1/devices/reload
 ````
 
 other route paths:
@@ -128,7 +130,7 @@ examples:
 
 ````
 # notes:
-#   set "to" to "en" or "fr", or "all" to send pn to all devices
+#   set "to" to "en" or "fr" (or "all" to send pn to all devices)
 #     (recommended: send both "en" and "fr" messages in same post, see last 3 examples)
 #   set "messageType" to "general", "newProduct" or "productUpdate"
 #     (default: "general"; specify product nid(s) for "productUpdate", product nid for "newProduct")
@@ -145,13 +147,6 @@ examples:
 # general pn to one device
 $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1/push/send" -d '{
   "to": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
-  "title":"hello",
-  "body": "world"
-}'
-
-# general pn to all devices
-$ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1/push/send" -d '{
-  "to": "all",
   "title":"hello",
   "body": "world"
 }'
@@ -294,11 +289,21 @@ $ curl -H "Content-Type: application/json" -X POST "http://localhost:3011/api/v1
 - /api/v1/push/read/receipts
 
 Gets receipts from Expo, processes and removes stored tickets, stores receipts. See ./notifications/expo.
-Note: can schedule a cron task to run this endpoint daily (recommended).
+
+
+**Note:** can schedule a cron task to run this endpoint daily (_recommended_).
+
+- /api/v1/push/results
+
+Gets most recent push notification results within last x days with toCount (pn sent to # of devices), ticketsProcessed (flag), and receiptsStatusNotOkCount (# of issues reported by provider).
+
+- /api/v1/push/results/:notificationId
+
+Gets full results for a push notification, along with receipt details where status is not ok.
 
 - /api/v1/notifications/:token
 
-Gets most recent notifications within last x days.
+Gets most recent notifications within last x days, filtered by token, preferences.
 
 
 ## data
@@ -412,8 +417,8 @@ CREATE TABLE "tickets" (
 COMMENT ON TABLE "tickets"
     IS 'tickets received from Expo when sending push notifications';
 
-CREATE INDEX "tickets_ticket_id_idx" ON "tickets" ("ticket_id");
 CREATE INDEX "tickets_receipt_id_idx" ON "tickets" ("receipt_id");
+CREATE INDEX "tickets_notification_ids_idx" ON "tickets" USING GIN ("notification_ids" array_ops);
 
 CREATE TABLE "receipts" (
     "id" SERIAL PRIMARY KEY,
@@ -427,26 +432,56 @@ COMMENT ON TABLE "receipts"
     IS 'receipts received from Expo';
 
 CREATE INDEX "receipts_receipt_id_idx" ON "receipts" ("receipt_id");
+CREATE INDEX "receipts_notification_ids_idx" ON "receipts" USING GIN ("notification_ids" array_ops);
 ````
 
 ## release notes
 
-HPCI CVT API Server
+## HPCI PNS API Server - Update 0.0.4
 
-### version: 0.0.3 (current)
+### **Steps to upgrade to 0.0.4** (from 0.0.3)
+
+#### 1. Reset the hpcipns Postgres database:
+- drop the database
+````
+DROP DATABASE "hpcipns";
+````
+- run the [db/index postgres script](#dbindex-postgres)
+
+#### 2. Pull and check files:
+````
+yarn --checkFiles
+````
+
+#### 3. Deploy latest (note: .env has no new changes)
+
+#### 4. Start:
+````
+npm start
+````
+
+#### 5. Ensure /devices/* and /notifications/* _are the **only** public endpoints_
+---
+### May 16, 2022; version: 0.0.4
+
+- added endpoints for reviewing push results
+- optimized notifications queries
+- deleted device on post when notifications.enabled is false
+- see [upgrade steps](#steps-to-upgrade-to-004-from-003)
+
+### March 2, 2022; version: 0.0.3
 
 - added postgres
+- added receipts, extra fields for notifications and tickets
+- added Expo access security token
 
-### version: 0.0.2
+### January 10, 2022; version: 0.0.2
 
 - added notifcations settings and message type
+- added endpoint to get latest notifications for device
+- added bookmarks
 
-### version: 0.0.1
+### August 12, 2022; version: 0.0.1
 
 - initial commit
 
-
-## TODO
-
-- set up and send Expo 'security token'
-- complete handling of errors from Expo

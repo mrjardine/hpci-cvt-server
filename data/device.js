@@ -60,14 +60,15 @@ const prepareDevice = (req, res, next) => {
   req.validDevice = isValid(token, languagePref, notifications, bookmarks);
   if (req.validDevice) {
     req.userDevice = device(token, languagePref, notifications, bookmarks);
+    req.enabledDevice = notifications.enabled;
   }
   next();
 };
 
 const addDevice = async (req, res, next) => {
-  const { params, validDevice, userDevice } = req;
+  const { params, validDevice, userDevice, enabledDevice } = req;
   const { data } = req.body;
-  if (validDevice) {
+  if (validDevice && enabledDevice) {
     // override bookmarks if provided, else merge (i.e. can change language without providing bookmarks)
     const override = !isNil(data) && !isNil(data.bookmarks);
     if (env === 'DEV') {
@@ -167,8 +168,9 @@ const retrieveDevice = async (req, res, next) => {
 };
 
 const deleteDevice = async (req, res, next) => {
-  const token = req.params.token;
-  if (token.length === 22) {
+  const { params, enabledDevice } = req;
+  const token = params.token;
+  if (token.length === 22 && (isNil(enabledDevice) || !enabledDevice)) {
     if (env === 'DEV') {
       JsonDB.delete(dataPathRoot.concat(token));
     } else {
