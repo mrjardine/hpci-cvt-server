@@ -465,8 +465,9 @@ npm start
 
 
 ---
-### May 16, 2022; version: 0.0.4
+### June 1, 2022; version: 0.0.4
 
+- added response body for push/send
 - added endpoints for reviewing push results
 - optimized notifications queries
 - deleted device on post when notifications.enabled is false
