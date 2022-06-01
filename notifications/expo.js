@@ -80,10 +80,12 @@ const sendMessages = async (req, res, next) => {
       } catch (error) {
         console.log('Error sending notifications:', error);
       }
+      res.status(200); // OK
+    } else {
+      res.status(204); // no messages to send, no content in response
     }
-    res.status(200);
   } else {
-    res.status(400);
+    res.status(400); // message(s) not valid, bad request
   }
   next();
 };

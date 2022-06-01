@@ -448,22 +448,26 @@ DROP DATABASE "hpcipns";
 ````
 - run the [db/index postgres script](#dbindex-postgres)
 
-#### 2. Pull and check files:
+#### 2. Pull latest from origin/main and check files:
 ````
 yarn --checkFiles
 ````
 
-#### 3. Deploy latest (note: .env has no new changes)
-
-#### 4. Start:
+#### 3. Start:
 ````
 npm start
 ````
 
-#### 5. Ensure /devices/* and /notifications/* _are the **only** public endpoints_
----
-### May 16, 2022; version: 0.0.4
+#### 4. Ensure /devices/* and /notifications/* _are the **only** public endpoints_
 
+
+**Note:** .env has no new changes.
+
+
+---
+### June 1, 2022; version: 0.0.4
+
+- added response body for push/send
 - added endpoints for reviewing push results
 - optimized notifications queries
 - deleted device on post when notifications.enabled is false
