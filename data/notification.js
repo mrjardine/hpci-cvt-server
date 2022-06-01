@@ -43,6 +43,10 @@ const notification = (
   };
 };
 
+const createdComparator = (a, b) => {
+  return a.created < b.created ? 1 : -1;
+};
+
 const addNotifications = async (req, res, next) => {
   const { sentNotifications } = req;
   if (!isNil(sentNotifications)) {
@@ -61,6 +65,7 @@ const addNotifications = async (req, res, next) => {
         now()
       );
     });
+    const notificationsResponse = [];
     for (const notification of notifications) {
       // save notification even if to.length = 0 (e.g. for language changes)
       if (!isNil(notification.created)) {
@@ -90,7 +95,24 @@ const addNotifications = async (req, res, next) => {
             );
           }
         }
+        try {
+          // deep copy so fields can be removed from response
+          notificationsResponse.push(JSON.parse(JSON.stringify(notification)));
+        } catch (error) {
+          console.log('Unable to add notification details to response:', error);
+        }
       }
+    }
+    notificationsResponse.forEach((notification) => {
+      // remove all except notificationId, toCount, language
+      delete notification.to;
+      delete notification.title;
+      delete notification.body;
+      delete notification.data;
+      delete notification.created;
+    });
+    if (notificationsResponse.length > 0) {
+      res.send(notificationsResponse);
     }
   }
   next();
@@ -154,10 +176,6 @@ const productsInNotification = (notification) => {
     }
   }
   return products;
-};
-
-const createdComparator = (a, b) => {
-  return a.created < b.created ? 1 : -1;
 };
 
 const retrieveLatestNotifications = async (req, res, next) => {
